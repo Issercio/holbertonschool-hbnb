@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from .base_model import BaseModel
 from app.extensions import db
+from .association_tables import place_amenity  # Import de la table d'association
 
 class Place(BaseModel, db.Model):
     """Class representing a rental place"""
@@ -16,7 +17,7 @@ class Place(BaseModel, db.Model):
     owner_id = Column(String, ForeignKey('users.id'), nullable=False)
 
     owner = relationship("User", back_populates="places")
-    amenities = relationship("Amenity", secondary="place_amenity", back_populates="places")
+    amenities = relationship("Amenity", secondary=place_amenity, back_populates="places")  # Utilisation de la table d'association
     reviews = relationship("Review", back_populates="place")
 
     def __init__(self, title, owner, description="", price=0.0, latitude=0.0, longitude=0.0, **kwargs):

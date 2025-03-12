@@ -3,8 +3,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.exc import IntegrityError
 from .base_model import BaseModel
 from app.extensions import db
-from .user import User
-from .place import Place
 
 class Review(BaseModel, db.Model):
     """Class representing a review"""
@@ -16,10 +14,12 @@ class Review(BaseModel, db.Model):
     place_id = Column(String, ForeignKey('places.id'), nullable=False)
     user_id = Column(String, ForeignKey('users.id'), nullable=False)
 
+    # Relations
     place = relationship("Place", back_populates="reviews")
     user = relationship("User", back_populates="reviews")
 
     def __init__(self, text, rating, place, user, **kwargs):
+        """Initialize a new Review instance."""
         super().__init__(**kwargs)
         self.validate_text(text)
         self.validate_rating(rating)
@@ -32,22 +32,29 @@ class Review(BaseModel, db.Model):
 
     @staticmethod
     def validate_text(text):
+        """Validate that the review text is not empty."""
         if not text or not text.strip():
             raise ValueError("Review content cannot be empty")
 
     @staticmethod
     def validate_rating(rating):
+        """Validate that the rating is an integer between 1 and 5."""
         if not isinstance(rating, int) or not 1 <= rating <= 5:
             raise ValueError("Rating must be an integer between 1 and 5")
 
     @staticmethod
     def validate_relationships(place, user):
+        """Validate that the review is associated with valid Place and User instances."""
+        from .place import Place
+        from .user import User
+
         if not isinstance(place, Place):
             raise ValueError("Review must be associated with a valid Place")
         if not isinstance(user, User):
             raise ValueError("Review must be associated with a valid User")
 
     def to_dict(self):
+        """Convert review instance to dictionary representation."""
         review_dict = super().to_dict()
         review_dict.update({
             'text': self.text,
@@ -59,7 +66,7 @@ class Review(BaseModel, db.Model):
 
     @classmethod
     def create_review(cls, review_data):
-        """Create a new review with validation"""
+        """Create a new review with validation."""
         try:
             # Text validation
             if not review_data.get('text'):
@@ -76,6 +83,9 @@ class Review(BaseModel, db.Model):
                     raise ValueError("Rating must be an integer between 1 and 5")
             
             # User and Place validation
+            from .place import Place
+            from .user import User
+
             place = Place.query.get(review_data['place_id'])
             user = User.query.get(review_data['user_id'])
             if not place:
@@ -83,6 +93,7 @@ class Review(BaseModel, db.Model):
             if not user:
                 raise ValueError("Invalid user_id provided")
             
+            # Create the review instance
             review = cls(
                 text=review_data['text'],
                 rating=rating,

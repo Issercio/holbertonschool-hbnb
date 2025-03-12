@@ -5,7 +5,6 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 api = Namespace('users', description='User operations')
 
-# Updated model with validation constraints AND proper examples
 user_model = api.model('User', {
     'first_name': fields.String(
         required=True, 
@@ -41,7 +40,6 @@ user_model = api.model('User', {
     )
 })
 
-# Complete response model including all fields
 user_response_model = api.model('UserResponse', {
     'id': fields.String(description='User unique identifier'),
     'first_name': fields.String(description='First name of the user'),
@@ -70,8 +68,6 @@ class UserList(Resource):
     def post(self):
         """Create a new user"""
         try:
-            if 'password' not in api.payload:
-                raise ValueError("Password is required")
             new_user = facade.create_user(api.payload)
             return new_user.to_dict(), 201
         except ValueError as e:
@@ -107,3 +103,13 @@ class User(Resource):
             return updated_user.to_dict()
         except ValueError as e:
             api.abort(400, str(e))
+
+    @jwt_required()
+    @api.doc('delete_user')
+    @api.response(204, 'User deleted')
+    def delete(self, user_id):
+        """Delete a user"""
+        current_user = get_jwt_identity()
+        if facade.delete_user(user_id):
+            return '', 204
+        api.abort(404, f"User {user_id} not found")
