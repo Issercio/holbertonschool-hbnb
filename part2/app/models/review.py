@@ -1,21 +1,25 @@
-from app.models import db
-from app.models.base_model import BaseModel
-from datetime import datetime
+from app.extensions import db
+from .base_model import BaseModel
+from sqlalchemy.orm import relationship
 
 class Review(BaseModel, db.Model):
-    """Class representing a review"""
     __tablename__ = 'reviews'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(60), primary_key=True)
     text = db.Column(db.Text, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
-    place_id = db.Column(db.Integer, db.ForeignKey('places.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    place_id = db.Column(db.String(60), db.ForeignKey('places.id'), nullable=False)
+    user_id = db.Column(db.String(60), db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
-    def __init__(self, text, rating, place_id, user_id):
-        """Initialize a new review"""
+    place = relationship("Place", back_populates="reviews")
+    user = relationship("User", back_populates="reviews")
+
+    def __init__(self, text, rating, place_id, user_id, **kwargs):
+        super().__init__(**kwargs)
+        self.validate_text(text)
+        self.validate_rating(rating)
         self.text = text
         self.rating = rating
         self.place_id = place_id
@@ -23,40 +27,23 @@ class Review(BaseModel, db.Model):
 
     @staticmethod
     def validate_text(text):
-        """Validate review content"""
         if not text or not text.strip():
             raise ValueError("Review content cannot be empty")
 
     @staticmethod
     def validate_rating(rating):
-        """Validate rating"""
         if not isinstance(rating, int) or not 1 <= rating <= 5:
             raise ValueError("Rating must be an integer between 1 and 5")
 
     def to_dict(self):
-        """Convert review to dictionary"""
-        return {
-            'id': self.id,
+        review_dict = super().to_dict()
+        review_dict.update({
             'text': self.text,
             'rating': self.rating,
             'place_id': self.place_id,
-            'user_id': self.user_id,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
-        }
+            'user_id': self.user_id
+        })
+        return review_dict
 
-    @classmethod
-    def create_review(cls, review_data):
-        """Create a new review with validation"""
-        cls.validate_text(review_data.get('text'))
-        cls.validate_rating(review_data.get('rating'))
-
-        new_review = cls(
-            text=review_data['text'],
-            rating=review_data['rating'],
-            place_id=review_data['place_id'],
-            user_id=review_data['user_id']
-        )
-        db.session.add(new_review)
-        db.session.commit()
-        return new_review.to_dict()
+    def __repr__(self):
+        return f"<Review {self.id}>"

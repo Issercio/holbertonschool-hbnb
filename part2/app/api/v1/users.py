@@ -1,92 +1,104 @@
 from flask_restx import Namespace, Resource, fields
 from app.services import facade
 from werkzeug.exceptions import BadRequest
+from sqlalchemy.exc import IntegrityError
+import uuid
 
 api = Namespace('users', description='User operations')
 
-# Updated model with validation constraints AND proper examples
+class UUIDField(fields.String):
+    def format(self, value):
+        try:
+            uuid.UUID(str(value))
+            return str(value)
+        except ValueError:
+            raise ValueError('Invalid UUID')
+
+# Modèle mis à jour avec validation étendue
 user_model = api.model('User', {
-    'first_name': fields.String(
-        required=True, 
-        description='First name of the user, max 50 characters',
-        min_length=1,
-        max_length=50,
-        example='John'
-    ),
-    'last_name': fields.String(
-        required=True, 
-        description='Last name of the user, max 50 characters',
-        min_length=1,
-        max_length=50,
-        example='Doe'
-    ),
-    'email': fields.String(
-        required=True, 
-        description='Email of the user, must be in valid format',
-        pattern=r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
-        example='john.doe@example.com'  # Add a clean example
-    ),
-    'is_admin': fields.Boolean(
-        required=False, 
-        default=False,
-        description='Admin status, defaults to False',
-        example=False
-    )
+    'first_name': fields.String(required=True, max_length=50, example='John'),
+    'last_name': fields.String(required=True, max_length=50, example='Doe'),
+    'email': fields.String(required=True, pattern=r'^\S+@\S+\.\S+$', example='john.doe@example.com'),
+    'is_admin': fields.Boolean(default=False)
 })
 
-# Complete response model including all fields
 user_response_model = api.model('UserResponse', {
-    'id': fields.String(description='User unique identifier'),
-    'first_name': fields.String(description='First name of the user'),
-    'last_name': fields.String(description='Last name of the user'),
-    'email': fields.String(description='Email of the user'),
-    'is_admin': fields.Boolean(description='Admin status'),
-    'created_at': fields.DateTime(description='Timestamp of user creation'),
-    'updated_at': fields.DateTime(description='Timestamp of last update')
+    'id': UUIDField(required=True, description='ID unique'),
+    'first_name': fields.String,
+    'last_name': fields.String,
+    'email': fields.String,
+    'is_admin': fields.Boolean,
+    'created_at': fields.DateTime(dt_format='iso8601'),
+    'updated_at': fields.DateTime(dt_format='iso8601')
 })
 
 @api.route('/')
 class UserList(Resource):
-    @api.doc('list_users')
-    @api.marshal_list_with(user_response_model, mask=False)  # Add mask=False here
+    @api.marshal_list_with(user_response_model)
     def get(self):
-        """List all users"""
-        return facade.get_users()
-
-    @api.doc('create_user')
-    @api.expect(user_model)
-    @api.marshal_with(user_response_model, code=201, mask=False)  # Add mask=False here
-    @api.response(400, 'Validation Error')
-    def post(self):
-        """Create a new user"""
+        """List all users with pagination"""
         try:
-            return facade.create_user(api.payload), 201
+            return facade.get_users()
+        except Exception as e:
+            api.abort(500, str(e))
+
+    @api.expect(user_model)
+    @api.marshal_with(user_response_model, code=201)
+    @api.response(400, 'Invalid input')
+    @api.response(409, 'Duplicate email')
+    def post(self):
+        """Create user with data validation"""
+        try:
+            data = api.payload
+            if not all(key in data for key in ['first_name', 'last_name', 'email']):
+                raise BadRequest('Missing required fields')
+                
+            return facade.create_user(data), 201
+            
+        except IntegrityError as e:
+            api.abort(409, 'Email already exists')
         except ValueError as e:
             api.abort(400, str(e))
+        except Exception as e:
+            api.abort(500, 'Server error: ' + str(e))
 
 @api.route('/<string:user_id>')
-@api.param('user_id', 'The user identifier')
-@api.response(404, 'User not found')
-class User(Resource):
-    @api.doc('get_user')
-    @api.marshal_with(user_response_model, mask=False)  # Add mask=False here
+@api.param('user_id', 'The user identifier (UUID)')
+class UserResource(Resource):
+    @api.marshal_with(user_response_model)
+    @api.response(404, 'User not found')
     def get(self, user_id):
-        """Get a user by ID."""
-        user = facade.get_user(user_id)
-        if not user:
-            api.abort(404, f"User {user_id} not found")
-        return user
-
-    @api.doc('update_user')
-    @api.expect(user_model)
-    @api.marshal_with(user_response_model, mask=False)  # Add mask=False here
-    @api.response(400, 'Validation Error')
-    def put(self, user_id):
-        """Update a user."""
+        """Get user by ID with proper type checking"""
         try:
-            user = facade.update_user(user_id, api.payload)
+            user = facade.get_user(user_id)
             if not user:
-                api.abort(404, f"User {user_id} not found")
+                api.abort(404, f'User {user_id} not found')
             return user
+        except Exception as e:
+            api.abort(500, str(e))
+
+    @api.expect(user_model)
+    @api.marshal_with(user_response_model)
+    @api.response(400, 'Invalid input')
+    @api.response(404, 'User not found')
+    def put(self, user_id):
+        """Update user with full validation"""
+        try:
+            data = api.payload
+            if 'email' in data:
+                existing = facade.get_user_by_email(data['email'])
+                if existing and str(existing['id']) != user_id:
+                    api.abort(409, 'Email already in use')
+                    
+            updated_user = facade.update_user(user_id, data)
+            if not updated_user:
+                api.abort(404, f'User {user_id} not found')
+                
+            return updated_user
+            
+        except IntegrityError as e:
+            api.abort(409, 'Database constraint error')
         except ValueError as e:
             api.abort(400, str(e))
+        except Exception as e:
+            api.abort(500, 'Server error: ' + str(e))

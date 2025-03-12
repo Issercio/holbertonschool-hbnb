@@ -1,148 +1,207 @@
-from app.persistence.repository import SQLAlchemyRepository
-from app.models.user import User
 from app.models.place import Place
+from app.models.user import User
 from app.models.amenity import Amenity
-from app.models.review import Review
+from app.persistence.repository import SQLAlchemyRepository
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 class Facade:
-    """
-    Facade class to handle data operations using SQLAlchemy repositories.
-    """
     def __init__(self):
-        """Initialize repositories for different entities."""
+        """Initialiser les bases de données"""
         self.user_repository = SQLAlchemyRepository(User)
         self.place_repository = SQLAlchemyRepository(Place)
         self.amenity_repository = SQLAlchemyRepository(Amenity)
-        self.review_repository = SQLAlchemyRepository(Review)
 
-    # User-related methods
+    # Méthodes utilisateur
     def get_users(self):
-        """Retrieve all users from the database."""
-        return self.user_repository.get_all()
+        """Obtenir tous les utilisateurs"""
+        try:
+            users = self.user_repository.get_all()
+            return [user.to_dict() for user in users]
+        except Exception as e:
+            raise ValueError(f"Error getting users: {e}")
 
     def get_user(self, user_id):
-        """Retrieve a user by ID."""
-        return self.user_repository.get(user_id)
+        """Obtenir un utilisateur par ID"""
+        try:
+            user = self.user_repository.get(user_id)
+            return user.to_dict() if user else None
+        except NoResultFound:
+            return None
+        except Exception as e:
+            raise ValueError(f"Error getting user: {e}")
+
+    def get_user_by_email(self, email):
+        """Obtenir un utilisateur par email"""
+        try:
+            user = self.user_repository.get_by_attribute('email', email)
+            return user.to_dict() if user else None
+        except Exception as e:
+            raise ValueError(f"Error getting user by email: {e}")
 
     def create_user(self, user_data):
-        """Create a new user in the database."""
-        user = User(**user_data)
-        self.user_repository.add(user)
-        return user
+        """Créer un nouvel utilisateur"""
+        try:
+            existing_user = self.get_user_by_email(user_data.get('email'))
+            if existing_user:
+                raise ValueError("Un utilisateur avec cet email existe déjà")
+
+            user = User(**user_data)
+            created_user = self.user_repository.add(user)
+            return created_user.to_dict()
+        except IntegrityError:
+            raise ValueError("Erreur d'intégrité lors de la création de l'utilisateur: données en double")
+        except Exception as e:
+            raise ValueError(f"Erreur lors de la création de l'utilisateur: {str(e)}")
 
     def update_user(self, user_id, data):
-        """Update an existing user in the database."""
-        user = self.get_user(user_id)
-        if user:
+        """Mettre à jour un utilisateur existant"""
+        try:
+            user = self.user_repository.get(user_id)
+            if not user:
+                return None
+
+            if 'email' in data:
+                existing_user = self.get_user_by_email(data['email'])
+                if existing_user and existing_user['id'] != user_id:
+                    raise ValueError("Un autre utilisateur utilise déjà cet email")
+
             for key, value in data.items():
                 setattr(user, key, value)
-            self.user_repository.add(user)  # Use add to persist changes
-            return user
-        return None
 
-    def delete_user(self, user_id):
-        """Delete a user from the database."""
-        user = self.get_user(user_id)
-        if user:
-            self.user_repository.delete(user_id)
-            return True
-        return False
+            updated_user = self.user_repository.add(user)  # Utiliser add pour mettre à jour
+            return updated_user.to_dict()
+        except IntegrityError:
+            raise ValueError("Erreur d'intégrité lors de la mise à jour de l'utilisateur: données en double")
+        except Exception as e:
+            raise ValueError(f"Erreur lors de la mise à jour de l'utilisateur: {str(e)}")
 
-    # Amenity-related methods
-    def create_amenity(self, amenity_data):
-        """Create a new amenity in the database."""
-        amenity = Amenity(**amenity_data)
-        self.amenity_repository.add(amenity)
-        return amenity
+    # Methods for places
+    def get_places(self):
+        """Obtenir tous les endroits"""
+        try:
+            # Charger les lieux avec leurs équipements et propriétaires
+            places = self.place_repository.get_all(options=[joinedload(Place.amenities), joinedload(Place.owner)])
+            logging.debug(f"Nombre de lieux récupérés : {len(places)}")
 
-    def get_amenity(self, amenity_id):
-        """Retrieve an amenity by ID."""
-        return self.amenity_repository.get(amenity_id)
+            # Construire la liste des lieux avec leurs équipements inclus
+            result = []
+            for place in places:
+                logging.debug(f"Traitement du lieu : {place.id} - {place.title}")
+                logging.debug(f"Nombre d'équipements pour ce lieu : {len(place.amenities)}")  # Log pour vérifier le nombre d'équipements
+                for amenity in place.amenities:
+                    logging.debug(f"Équipement trouvé : {amenity.id} - {amenity.name}")  # Log pour chaque équipement
+                place_dict = place.to_dict()
+                place_dict['amenities'] = [amenity.to_dict() for amenity in place.amenities]
+                result.append(place_dict)
 
-    def get_all_amenities(self):
-        """Retrieve all amenities from the database."""
-        return self.amenity_repository.get_all()
-
-    def update_amenity(self, amenity_id, data):
-        """Update an existing amenity in the database."""
-        amenity = self.get_amenity(amenity_id)
-        if amenity:
-            for key, value in data.items():
-                setattr(amenity, key, value)
-            self.amenity_repository.add(amenity)  # Use add to persist changes
-            return amenity
-        return None
-
-    def delete_amenity(self, amenity_id):
-        """Delete an amenity from the database."""
-        amenity = self.get_amenity(amenity_id)
-        if amenity:
-            self.amenity_repository.delete(amenity_id)
-            return True
-        return False
-
-    # Place-related methods
-    def create_place(self, place_data):
-        """Create a new place in the database."""
-        place = Place(**place_data)
-        self.place_repository.add(place)
-        return place
+            return result
+        except Exception as e:
+            logging.error(f"Erreur lors de la récupération des endroits : {str(e)}")
+            raise ValueError(f"Erreur lors de la récupération des endroits : {str(e)}")
 
     def get_place(self, place_id):
-        """Retrieve a place by ID."""
-        return self.place_repository.get(place_id)
+        """Obtenir un endroit par ID"""
+        try:
+            # Charger un lieu spécifique avec ses équipements et son propriétaire
+            place = self.place_repository.get(place_id, options=[joinedload(Place.amenities), joinedload(Place.owner)])
+            if place:
+                logging.debug(f"Lieu récupéré : {place.id} - {place.title}")
+                logging.debug(f"Nombre d'équipements pour ce lieu : {len(place.amenities)}")  # Log pour vérifier le nombre d'équipements
+                for amenity in place.amenities:
+                    logging.debug(f"Équipement trouvé : {amenity.id} - {amenity.name}")  # Log pour chaque équipement
+                place_dict = place.to_dict()
+                place_dict['amenities'] = [amenity.to_dict() for amenity in place.amenities]
+                return place_dict
+            return None
+        except Exception as e:
+            logging.error(f"Erreur lors de la récupération du lieu : {str(e)}")
+            raise ValueError(f"Erreur lors de la récupération du lieu : {str(e)}")
 
-    def get_all_places(self):
-        """Retrieve all places from the database."""
-        return self.place_repository.get_all()
+    def update_place(self, place_id, place_data):
+        """Mettre à jour un endroit existant"""
+        try:
+            place = self.place_repository.get(place_id)
+            if not place:
+                return None
 
-    def update_place(self, place_id, data):
-        """Update an existing place in the database."""
-        place = self.get_place(place_id)
-        if place:
-            for key, value in data.items():
+            for key, value in place_data.items():
                 setattr(place, key, value)
-            self.place_repository.add(place)  # Use add to persist changes
-            return place
-        return None
 
-    def delete_place(self, place_id):
-        """Delete a place from the database."""
-        place = self.get_place(place_id)
-        if place:
-            self.place_repository.delete(place_id)
-            return True
-        return False
+            updated_place = self.place_repository.add(place)
+            return updated_place.to_dict()
+        except IntegrityError as e:
+            logging.error(f"Erreur d'intégrité : {str(e)}")
+            raise ValueError("Erreur d'intégrité lors de la mise à jour de l'endroit: données en double")
+        except Exception as e:
+            logging.error(f"Erreur inattendue : {str(e)}")
+            raise ValueError(f"Erreur lors de la mise à jour de l'endroit: {str(e)}")
 
-    # Review-related methods
-    def create_review(self, review_data):
-        """Create a new review in the database."""
-        review = Review(**review_data)
-        self.review_repository.add(review)
-        return review
+    def get_reviews_by_place(self, place_id):
+        """Obtenir toutes les critiques pour un endroit spécifique"""
+        try:
+            place = self.place_repository.get(place_id)
+            if not place:
+                raise ValueError(f"Endroit {place_id} non trouvé")
+            return [review.to_dict() for review in place.reviews]
+        except Exception as e:
+            logging.error(f"Erreur lors de la récupération des critiques: {str(e)}")
+            raise ValueError(f"Erreur lors de la récupération des critiques: {str(e)}")
 
-    def get_review(self, review_id):
-        """Retrieve a review by ID."""
-        return self.review_repository.get(review_id)
+    # Methods for amenities
+    def create_amenity(self, amenity_data):
+        """Create a new amenity"""
+        try:
+            amenity = Amenity(**amenity_data)
+            created_amenity = self.amenity_repository.add(amenity)
+            return created_amenity.to_dict()
+        except IntegrityError as e:
+            logging.error(f"Erreur d'intégrité : {str(e)}")
+            raise ValueError("Erreur d'intégrité lors de la création de l'équipement: données en double")
+        except Exception as e:
+            logging.error(f"Erreur inattendue : {str(e)}")
+            raise ValueError(f"Error creating amenity: {e}")
 
-    def get_all_reviews(self):
-        """Retrieve all reviews from the database."""
-        return self.review_repository.get_all()
+    def get_amenity(self, amenity_id):
+        """Get amenity by ID"""
+        try:
+            amenity = self.amenity_repository.get(amenity_id)
+            return amenity.to_dict() if amenity else None
+        except NoResultFound as e:
+            logging.error(f"Aucun équipement trouvé : {str(e)}")
+            return None
+        except Exception as e:
+            logging.error(f"Erreur lors de la récupération de l'équipement : {str(e)}")
+            raise ValueError(f"Error getting amenity: {e}")
 
-    def update_review(self, review_id, data):
-        """Update an existing review in the database."""
-        review = self.get_review(review_id)
-        if review:
-            for key, value in data.items():
-                setattr(review, key, value)
-            self.review_repository.add(review)  # Use add to persist changes
-            return review
-        return None
+    def get_all_amenities(self):
+        """Get all amenities"""
+        try:
+            amenities = self.amenity_repository.get_all()
+            return [amenity.to_dict() for amenity in amenities]
+        except Exception as e:
+            logging.error(f"Erreur lors de la récupération de tous les équipements : {str(e)}")
+            raise ValueError(f"Error getting all amenities: {e}")
 
-    def delete_review(self, review_id):
-        """Delete a review from the database."""
-        review = self.get_review(review_id)
-        if review:
-            self.review_repository.delete(review_id)
-            return True
-        return False
+    def update_amenity(self, amenity_id, amenity_data):
+        """Update an existing amenity"""
+        try:
+            amenity = self.amenity_repository.get(amenity_id)
+            if not amenity:
+                return None
+
+            for key, value in amenity_data.items():
+                setattr(amenity, key, value)
+
+            updated_amenity = self.amenity_repository.add(amenity)  # Utiliser add pour mettre à jour
+            return updated_amenity.to_dict()
+        except IntegrityError as e:
+            logging.error(f"Erreur d'intégrité : {str(e)}")
+            raise ValueError("Erreur d'intégrité lors de la mise à jour de l'équipement: données en double")
+        except Exception as e:
+            logging.error(f"Erreur lors de la mise à jour de l'équipement: {str(e)}")
+            raise ValueError(f"Erreur lors de la mise à jour de l'équipement: {str(e)}")

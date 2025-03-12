@@ -1,18 +1,22 @@
+import os
 from app import create_app
-from app.models import db
+from config import config
 
-"""Entry point for running the Flask application.
+# Déterminer l'environnement d'exécution
+env = os.environ.get("FLASK_ENV", "development")
 
-This module creates and configures the Flask application instance using
-the create_app factory function. When run directly, it starts the 
-development server on localhost port 5000 with debug mode enabled.
-"""
+# Sélectionner la configuration appropriée
+config_class = config.get(env, config['default'])
 
-app = create_app('config.DevelopmentConfig')
-
-# Ensure all database tables are created
-with app.app_context():
-    db.create_all()
+# Créer l'application
+app = create_app(config_class)
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    # Définir le mode debug en fonction de l'environnement
+    debug = env == 'development'
+    
+    # Obtenir le port depuis les variables d'environnement ou utiliser 5000 par défaut
+    port = int(os.environ.get("PORT", 5000))
+    
+    # Démarrer l'application
+    app.run(host='0.0.0.0', port=port, debug=debug)

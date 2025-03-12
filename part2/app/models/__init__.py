@@ -1,10 +1,11 @@
-from flask_sqlalchemy import SQLAlchemy
+from app.extensions import db
 
-# Initialisation de l'instance SQLAlchemy
-db = SQLAlchemy()
+place_amenity = db.Table('place_amenity',
+    db.Column('place_id', db.String(60), db.ForeignKey('places.id'), primary_key=True),
+    db.Column('amenity_id', db.String(60), db.ForeignKey('amenities.id'), primary_key=True)
+)
 
-# Importation des modèles pour qu'ils soient enregistrés avec SQLAlchemy
-from app.models.user import User
-from app.models.place import Place
-from app.models.review import Review
-from app.models.amenity import Amenity
+from .user import User
+from .place import Place
+from .amenity import Amenity
+from .review import Review
