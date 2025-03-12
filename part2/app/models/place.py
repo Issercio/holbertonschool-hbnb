@@ -1,31 +1,30 @@
-from app.extensions import db
+from sqlalchemy import Column, String, Float, ForeignKey
+from sqlalchemy.orm import relationship
 from .base_model import BaseModel
-from sqlalchemy.orm import relationship, joinedload
-from .associations import place_amenity
-import logging
+from app.extensions import db
 
 class Place(BaseModel, db.Model):
+    """Class representing a rental place"""
+    
     __tablename__ = 'places'
 
-    id = db.Column(db.String(60), primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
-    price = db.Column(db.Float, nullable=False)
-    latitude = db.Column(db.Float)
-    longitude = db.Column(db.Float)
-    owner_id = db.Column(db.String(60), db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    title = Column(String(100), nullable=False)
+    description = Column(String, default="")
+    price = Column(Float, default=0.0)
+    latitude = Column(Float, default=0.0)
+    longitude = Column(Float, default=0.0)
+    owner_id = Column(String, ForeignKey('users.id'), nullable=False)
 
     owner = relationship("User", back_populates="places")
-    reviews = relationship("Review", back_populates="place", cascade="all, delete-orphan")
-    amenities = relationship("Amenity", secondary=place_amenity, back_populates="places")
+    amenities = relationship("Amenity", secondary="place_amenity", back_populates="places")
+    reviews = relationship("Review", back_populates="place")
 
-    def __init__(self, title, owner_id, description="", price=0.0, latitude=0.0, longitude=0.0, **kwargs):
+    def __init__(self, title, owner, description="", price=0.0, latitude=0.0, longitude=0.0, **kwargs):
         super().__init__(**kwargs)
         self.validate_title(title)
+        self.validate_owner(owner)
         self.title = title
-        self.owner_id = owner_id
+        self.owner = owner
         self.description = description
         self.price = price
         self.latitude = latitude
@@ -33,33 +32,62 @@ class Place(BaseModel, db.Model):
 
     @staticmethod
     def validate_title(title):
-        if not title:
-            raise ValueError("Title cannot be empty")
-        if len(title) > 100:
-            raise ValueError("Title must be 100 characters or less")
+        if not title or len(title) > 100:
+            raise ValueError("Title must be between 1 and 100 characters")
+
+    @staticmethod
+    def validate_owner(owner):
+        from .user import User
+        if not isinstance(owner, User):
+            raise TypeError("Owner must be a User instance")
+
+    @property
+    def price(self):
+        return self._price
+
+    @price.setter
+    def price(self, value):
+        if not isinstance(value, (int, float)) or value < 0:
+            raise ValueError("Price must be a non-negative number")
+        self._price = float(value)
+
+    @property
+    def latitude(self):
+        return self._latitude
+
+    @latitude.setter
+    def latitude(self, value):
+        if not isinstance(value, (int, float)) or not -90 <= float(value) <= 90:
+            raise ValueError("Latitude must be between -90 and 90")
+        self._latitude = float(value)
+
+    @property
+    def longitude(self):
+        return self._longitude
+
+    @longitude.setter
+    def longitude(self, value):
+        if not isinstance(value, (int, float)) or not -180 <= float(value) <= 180:
+            raise ValueError("Longitude must be between -180 and 180")
+        self._longitude = float(value)
+
+    def add_amenity(self, amenity):
+        if amenity not in self.amenities:
+            self.amenities.append(amenity)
+
+    def add_review(self, review):
+        if review not in self.reviews:
+            self.reviews.append(review)
 
     def to_dict(self):
         place_dict = super().to_dict()
-        logging.debug(f"Converting place {self.id} to dict")
-        logging.debug(f"Raw amenities for place {self.id}: {self.amenities}")
-        
         place_dict.update({
             'title': self.title,
             'description': self.description,
             'price': self.price,
             'latitude': self.latitude,
             'longitude': self.longitude,
-            'owner_id': self.owner_id,
-            'amenities': [amenity.to_dict() for amenity in self.amenities],
-            'owner': {
-                'id': self.owner.id,
-                'first_name': self.owner.first_name,
-                'last_name': self.owner.last_name,
-                'email': self.owner.email
-            } if self.owner else None
+            'owner_id': self.owner.id if self.owner else None,
+            'amenities': [amenity.id for amenity in self.amenities] if self.amenities else []
         })
-        logging.debug(f"Amenities in place dict for {self.id}: {place_dict['amenities']}")
         return place_dict
-
-    def __repr__(self):
-        return f"<Place {self.title}>"

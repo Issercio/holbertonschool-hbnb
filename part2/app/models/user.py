@@ -1,50 +1,64 @@
-from app.extensions import db
-from .base_model import BaseModel
-import re
+from sqlalchemy import Column, String, Boolean
 from sqlalchemy.orm import relationship
+from sqlalchemy.exc import IntegrityError
+from .base_model import BaseModel
+from app.extensions import bcrypt
+from app.extensions import db
+from app import bcrypt
+import re
 
 class User(BaseModel, db.Model):
+    """Represents a user in the system."""
+    
     __tablename__ = 'users'
 
-    id = db.Column(db.String(60), primary_key=True)
-    first_name = db.Column(db.String(50), nullable=False)
-    last_name = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    first_name = Column(String(50), nullable=False)
+    last_name = Column(String(50), nullable=False)
+    email = Column(String(120), unique=True, nullable=False)
+    is_admin = Column(Boolean, default=False)
+    password = Column(String(60), nullable=False)
 
-    reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
-    places = relationship("Place", back_populates="owner", cascade="all, delete-orphan")
+    reviews = relationship("Review", back_populates="user")
 
-    def __init__(self, first_name, last_name, email, is_admin=False, **kwargs):
+    def __init__(self, first_name, last_name, email, password, is_admin=False, **kwargs):
+        """Initialize a new User instance."""
         super().__init__(**kwargs)
-        self.validate_and_set_attributes(first_name, last_name, email, is_admin)
-
-    def validate_and_set_attributes(self, first_name, last_name, email, is_admin):
-        if not first_name or first_name.strip() == "":
-            raise ValueError("First name cannot be empty")
-        if len(first_name) > 50:
-            raise ValueError("First name must be 50 characters or less")
-            
-        if not last_name or last_name.strip() == "":
-            raise ValueError("Last name cannot be empty")
-        if len(last_name) > 50:
-            raise ValueError("Last name must be 50 characters or less")
-            
-        if not email or email.strip() == "":
-            raise ValueError("Email cannot be empty")
         
-        email_pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
-        if not re.match(email_pattern, email):
-            raise ValueError("Invalid email format")
+        self.validate_first_name(first_name)
+        self.validate_last_name(last_name)
+        self.validate_email(email)
         
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
         self.is_admin = is_admin
+        self.hash_password(password)
+
+    @staticmethod
+    def validate_first_name(first_name):
+        if not first_name or len(first_name) > 50:
+            raise ValueError("First name must be between 1 and 50 characters")
+
+    @staticmethod
+    def validate_last_name(last_name):
+        if not last_name or len(last_name) > 50:
+            raise ValueError("Last name must be between 1 and 50 characters")
+
+    @staticmethod
+    def validate_email(email):
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            raise ValueError("Invalid email format")
+
+    def hash_password(self, password):
+        """Hashes the password before storing it."""
+        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    def verify_password(self, password):
+        """Verifies if the provided password matches the hashed password."""
+        return bcrypt.check_password_hash(self.password, password)
 
     def to_dict(self):
+        """Convert user instance to dictionary representation."""
         user_dict = super().to_dict()
         user_dict.update({
             'first_name': self.first_name,
@@ -54,5 +68,22 @@ class User(BaseModel, db.Model):
         })
         return user_dict
 
-    def __repr__(self):
-        return f"<User {self.email}>"
+    @classmethod
+    def create_user(cls, user_data):
+        """Create a new user with validation"""
+        try:
+            user = cls(
+                first_name=user_data['first_name'],
+                last_name=user_data['last_name'],
+                email=user_data['email'],
+                password=user_data['password'],
+                is_admin=user_data.get('is_admin', False)
+            )
+            db.session.add(user)
+            db.session.commit()
+            return user
+        except IntegrityError as e:
+            db.session.rollback()
+            raise ValueError("Failed to create user: " + str(e))
+        except KeyError as e:
+            raise ValueError(f"Missing required field: {str(e)}")
