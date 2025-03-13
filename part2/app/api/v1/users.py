@@ -117,19 +117,6 @@ class User(Resource):
         except ValueError as e:
             api.abort(400, str(e))
 
-    @jwt_required()
-    @api.doc('delete_user')
-    @api.response(204, 'User deleted')
-    @api.response(403, 'Unauthorized action')
-    def delete(self, user_id):
-        """Delete a user (Owner only)"""
-        current_user = get_jwt_identity()
-        if user_id != current_user:
-            api.abort(403, "Unauthorized action")
-        if facade.delete_user(user_id):
-            return '', 204
-        api.abort(404, f"User {user_id} not found")
-
 @api.route('/<string:user_id>/change-password')
 @api.param('user_id', 'The user identifier')
 class UserPasswordChange(Resource):

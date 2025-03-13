@@ -121,7 +121,6 @@ class PlaceResource(Resource):
             place = facade.get_place(place_id)
             if not place:
                 api.abort(404, f"Place {place_id} not found")
-            # Skip owner check if admin
             if not is_admin and place.owner_id != current_user:
                 api.abort(403, "Unauthorized action")
                 
@@ -145,7 +144,6 @@ class PlaceResource(Resource):
             place = facade.get_place(place_id)
             if not place:
                 api.abort(404, f"Place {place_id} not found")
-            # Skip owner check if admin
             if not is_admin and place.owner_id != current_user:
                 api.abort(403, "Unauthorized action")
                 
