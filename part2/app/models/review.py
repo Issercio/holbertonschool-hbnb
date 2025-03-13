@@ -18,17 +18,19 @@ class Review(BaseModel, db.Model):
     place = relationship("Place", back_populates="reviews")
     user = relationship("User", back_populates="reviews")
 
-    def __init__(self, text, rating, place, user, **kwargs):
+    def __init__(self, text, rating, place=None, user=None, **kwargs):
         """Initialize a new Review instance."""
         super().__init__(**kwargs)
         self.validate_text(text)
         self.validate_rating(rating)
-        self.validate_relationships(place, user)
 
         self.text = text
         self.rating = rating
-        self.place = place
-        self.user = user
+
+        if place:
+            self.validate_relationships(place, user)
+            self.place = place
+            self.user = user
 
     @staticmethod
     def validate_text(text):
@@ -60,7 +62,9 @@ class Review(BaseModel, db.Model):
             'text': self.text,
             'rating': self.rating,
             'place_id': self.place.id if self.place else None,
-            'user_id': self.user.id if self.user else None
+            'user_id': self.user.id if self.user else None,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at
         })
         return review_dict
 
@@ -68,11 +72,11 @@ class Review(BaseModel, db.Model):
     def create_review(cls, review_data):
         """Create a new review with validation."""
         try:
-            # Text validation
+            # Validate text
             if not review_data.get('text'):
                 raise ValueError("Review text cannot be empty")
             
-            # Rating validation
+            # Validate rating
             rating = review_data.get('rating')
             if rating is not None:
                 try:
@@ -82,7 +86,7 @@ class Review(BaseModel, db.Model):
                 except (ValueError, TypeError):
                     raise ValueError("Rating must be an integer between 1 and 5")
             
-            # User and Place validation
+            # Validate User and Place relationships
             from .place import Place
             from .user import User
 
@@ -100,9 +104,12 @@ class Review(BaseModel, db.Model):
                 place=place,
                 user=user
             )
+            
             db.session.add(review)
             db.session.commit()
-            return review
+            
+            return review.to_dict()
+        
         except IntegrityError as e:
             db.session.rollback()
             raise ValueError("Failed to create review: " + str(e))

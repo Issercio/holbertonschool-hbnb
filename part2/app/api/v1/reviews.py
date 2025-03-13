@@ -1,6 +1,7 @@
+from flask import request
 from flask_restx import Namespace, Resource, fields
 from app.services import facade
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 api = Namespace('reviews', description='Review operations')
 
@@ -38,7 +39,7 @@ class ReviewList(Resource):
 
             # Check if the user owns the place
             place = facade.get_place(review_data['place_id'])
-            if place.owner_id == current_user:
+            if place['owner_id'] == current_user:
                 api.abort(400, "You cannot review your own place")
 
             # Check if the user has already reviewed this place
@@ -47,7 +48,7 @@ class ReviewList(Resource):
                 api.abort(400, "You have already reviewed this place")
 
             review = facade.create_review(review_data)
-            return review.to_dict(), 201
+            return review, 201
         except ValueError as e:
             api.abort(400, str(e))
 
@@ -57,11 +58,11 @@ class ReviewList(Resource):
     @api.param('per_page', 'Items per page', type=int, default=10)
     def get(self):
         """Retrieve a list of all reviews (Public)"""
-        page = api.payload.get('page', 1)
-        per_page = api.payload.get('per_page', 10)
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
         reviews, total = facade.get_all_reviews(page=page, per_page=per_page)
         return {
-            'items': [review.to_dict() for review in reviews],
+            'items': reviews,
             'total': total,
             'page': page,
             'per_page': per_page
@@ -77,7 +78,7 @@ class ReviewResource(Resource):
         review = facade.get_review(review_id)
         if review is None:
             api.abort(404, f"Review with ID {review_id} not found")
-        return review.to_dict(), 200
+        return review, 200
 
     @jwt_required()
     @api.expect(review_model)
@@ -86,18 +87,18 @@ class ReviewResource(Resource):
     @api.response(400, 'Invalid input data')
     @api.response(403, 'Unauthorized action')
     def put(self, review_id):
-        """Update a review's information (Owner only)"""
-        current_user = get_jwt_identity()
+        """Update a review's information (Owner or Admin)"""
+        current_user = get_jwt()
         try:
             review = facade.get_review(review_id)
             if review is None:
                 api.abort(404, f"Review with ID {review_id} not found")
-            if review.user_id != current_user:
+            if not current_user.get('is_admin', False) and review['user_id'] != get_jwt_identity():
                 api.abort(403, "Unauthorized action")
 
             review_data = api.payload
             updated_review = facade.update_review(review_id, review_data)
-            return updated_review.to_dict(), 200
+            return updated_review, 200
         except ValueError as e:
             api.abort(400, str(e))
 
@@ -106,12 +107,12 @@ class ReviewResource(Resource):
     @api.response(404, 'Review not found')
     @api.response(403, 'Unauthorized action')
     def delete(self, review_id):
-        """Delete a review (Owner only)"""
-        current_user = get_jwt_identity()
+        """Delete a review (Owner or Admin)"""
+        current_user = get_jwt()
         review = facade.get_review(review_id)
         if review is None:
             api.abort(404, f"Review with ID {review_id} not found")
-        if review.user_id != current_user:
+        if not current_user.get('is_admin', False) and review['user_id'] != get_jwt_identity():
             api.abort(403, "Unauthorized action")
 
         facade.delete_review(review_id)

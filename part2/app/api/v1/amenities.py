@@ -1,6 +1,6 @@
 from flask_restx import Namespace, Resource, fields
 from app.services import facade
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 api = Namespace('amenities', description='Amenity operations')
 
@@ -28,9 +28,8 @@ class AmenityList(Resource):
     @api.marshal_with(amenity_response_model)
     def post(self):
         """Register a new amenity (Admin only)"""
-        current_user = get_jwt_identity()
-        user = facade.get_user(current_user)
-        if not user.is_admin:
+        current_user = get_jwt()
+        if not current_user.get('is_admin', False):
             return {'message': 'Admin privileges required'}, 403
         
         data = api.payload
@@ -72,9 +71,8 @@ class AmenityResource(Resource):
     @api.marshal_with(amenity_response_model)
     def put(self, amenity_id):
         """Update an amenity's information (Admin only)"""
-        current_user = get_jwt_identity()
-        user = facade.get_user(current_user)
-        if not user.is_admin:
+        current_user = get_jwt()
+        if not current_user.get('is_admin', False):
             return {'message': 'Admin privileges required'}, 403
         
         data = api.payload
@@ -85,20 +83,3 @@ class AmenityResource(Resource):
             if str(e) == "Amenity not found":
                 return {'message': str(e)}, 404
             return {'message': str(e)}, 400
-
-    @jwt_required()
-    @api.response(204, 'Amenity deleted')
-    @api.response(404, 'Amenity not found')
-    @api.response(403, 'Unauthorized')
-    def delete(self, amenity_id):
-        """Delete an amenity (Admin only)"""
-        current_user = get_jwt_identity()
-        user = facade.get_user(current_user)
-        if not user.is_admin:
-            return {'message': 'Admin privileges required'}, 403
-        
-        try:
-            facade.delete_amenity(amenity_id)
-            return '', 204
-        except ValueError as e:
-            return {'message': str(e)}, 404

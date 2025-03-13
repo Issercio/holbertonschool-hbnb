@@ -10,9 +10,14 @@ login_model = api.model('Login', {
     'password': fields.String(required=True, description='User password')
 })
 
+token_model = api.model('Token', {
+    'access_token': fields.String(description='Access token')
+})
+
 @api.route('/login')
 class Login(Resource):
     @api.expect(login_model)
+    @api.marshal_with(token_model)
     @api.response(200, 'Success')
     @api.response(401, 'Invalid credentials')
     def post(self):
@@ -27,10 +32,10 @@ class Login(Resource):
             if not user or not user.verify_password(credentials['password']):
                 return {'error': 'Invalid credentials'}, 401
 
-            # Étape 3 : Créer un token JWT avec l'ID utilisateur et le rôle admin
-            access_token = create_access_token(identity={'id': str(user.id), 'is_admin': user.is_admin})
-            
-            # Étape 4 : Retourner le token JWT au client
+            # Étape 3 : Créer un access token
+            access_token = create_access_token(identity=user.id, additional_claims={'is_admin': user.is_admin})
+
+            # Étape 4 : Retourner le token au client
             return {'access_token': access_token}, 200
         
         except Exception as e:
