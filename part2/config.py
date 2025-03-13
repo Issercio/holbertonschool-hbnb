@@ -1,3 +1,5 @@
+import os
+
 class Config:
     """Base configuration class.
     
@@ -6,6 +8,8 @@ class Config:
     """
     DEBUG = False
     TESTING = False
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'default_secret_key')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False  # Désactive le suivi des modifications SQLAlchemy (meilleures performances)
 
 class DevelopmentConfig(Config):
     """Development configuration settings.
@@ -13,6 +17,7 @@ class DevelopmentConfig(Config):
     Used for local development with debugging enabled.
     """
     DEBUG = True
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URI', 'sqlite:///development.db')
 
 class TestingConfig(Config):
     """Testing configuration settings.
@@ -20,10 +25,11 @@ class TestingConfig(Config):
     Used for running tests with testing mode enabled.
     """
     TESTING = True
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URI', 'sqlite:///testing.db')
 
 class ProductionConfig(Config):
     """Production configuration settings.
     
     Used for deployment in production environment.
     """
-    pass
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///production.db')

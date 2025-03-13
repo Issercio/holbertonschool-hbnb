@@ -1,28 +1,25 @@
-# models/review.py
+from sqlalchemy import Column, String, Integer, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.exc import IntegrityError
 from .base_model import BaseModel
+from app.extensions import db
 
-class Review(BaseModel):
-    """Class representing a review
+class Review(BaseModel, db.Model):
+    """Class representing a review"""
     
-    Attributes:
-        id (str): Unique identifier for each review
-        text (str): Content of the review
-        rating (int): Rating between 1 and 5
-        place (Place): Place being reviewed
-        user (User): User who wrote the review
-        created_at (DateTime): Timestamp when the review is created
-        updated_at (DateTime): Timestamp when the review is last updated
-    """
+    __tablename__ = 'reviews'
+
+    text = Column(String, nullable=False)
+    rating = Column(Integer, nullable=False)
+    place_id = Column(String, ForeignKey('places.id'), nullable=False)
+    user_id = Column(String, ForeignKey('users.id'), nullable=False)
+
+    # Relations
+    place = relationship("Place", back_populates="reviews")
+    user = relationship("User", back_populates="reviews")
 
     def __init__(self, text, rating, place, user, **kwargs):
-        """Initialize a new review
-        
-        Args:
-            text (str): Review content
-            rating (int): Rating between 1 and 5
-            place (Place): Place being reviewed
-            user (User): User writing the review
-        """
+        """Initialize a new Review instance."""
         super().__init__(**kwargs)
         self.validate_text(text)
         self.validate_rating(rating)
@@ -33,32 +30,31 @@ class Review(BaseModel):
         self.place = place
         self.user = user
 
-        # Update relationships
-        self.place.add_review(self)
-        self.user.add_review(self)
-
     @staticmethod
     def validate_text(text):
-        """Validate review content"""
+        """Validate that the review text is not empty."""
         if not text or not text.strip():
             raise ValueError("Review content cannot be empty")
 
     @staticmethod
     def validate_rating(rating):
-        """Validate rating"""
+        """Validate that the rating is an integer between 1 and 5."""
         if not isinstance(rating, int) or not 1 <= rating <= 5:
             raise ValueError("Rating must be an integer between 1 and 5")
 
     @staticmethod
     def validate_relationships(place, user):
-        """Validate Place and User relationships"""
-        if not place:
-            raise ValueError("Review must be associated with a place")
-        if not user:
-            raise ValueError("Review must be associated with a user")
+        """Validate that the review is associated with valid Place and User instances."""
+        from .place import Place
+        from .user import User
+
+        if not isinstance(place, Place):
+            raise ValueError("Review must be associated with a valid Place")
+        if not isinstance(user, User):
+            raise ValueError("Review must be associated with a valid User")
 
     def to_dict(self):
-        """Convert review to dictionary"""
+        """Convert review instance to dictionary representation."""
         review_dict = super().to_dict()
         review_dict.update({
             'text': self.text,
@@ -68,37 +64,45 @@ class Review(BaseModel):
         })
         return review_dict
 
-    def create_review(self, review_data):
-        """Create a new review with validation
-        
-        Args:
-            review_data (dict): Review data
-                
-        Returns:
-            dict: The newly created review
+    @classmethod
+    def create_review(cls, review_data):
+        """Create a new review with validation."""
+        try:
+            # Text validation
+            if not review_data.get('text'):
+                raise ValueError("Review text cannot be empty")
             
-        Raises:
-            ValueError: If the review data is invalid
-        """
-        # Text validation
-        if not review_data.get('text'):
-            raise ValueError("Review text cannot be empty")
-        
-        # Rating validation
-        rating = review_data.get('rating')
-        if rating is not None:
-            try:
-                rating = int(rating)
-                if not 1 <= rating <= 5:
-                    raise ValueError("Rating must be between 1 and 5")
-            except (ValueError, TypeError):
-                raise ValueError("Rating must be an integer between 1 and 5")
-        
-        # User ID validation
-        if not review_data.get('user_id') or review_data['user_id'] not in self.users_db:
-            raise ValueError(f"User with ID {review_data.get('user_id')} does not exist")
-        
-        # Place ID validation
-        if not review_data.get('place_id') or review_data['place_id'] not in self.places_db:
-            raise ValueError(f"Place with ID {review_data.get('place_id')} does not exist")
+            # Rating validation
+            rating = review_data.get('rating')
+            if rating is not None:
+                try:
+                    rating = int(rating)
+                    if not 1 <= rating <= 5:
+                        raise ValueError("Rating must be between 1 and 5")
+                except (ValueError, TypeError):
+                    raise ValueError("Rating must be an integer between 1 and 5")
+            
+            # User and Place validation
+            from .place import Place
+            from .user import User
 
+            place = Place.query.get(review_data['place_id'])
+            user = User.query.get(review_data['user_id'])
+            if not place:
+                raise ValueError("Invalid place_id provided")
+            if not user:
+                raise ValueError("Invalid user_id provided")
+            
+            # Create the review instance
+            review = cls(
+                text=review_data['text'],
+                rating=rating,
+                place=place,
+                user=user
+            )
+            db.session.add(review)
+            db.session.commit()
+            return review
+        except IntegrityError as e:
+            db.session.rollback()
+            raise ValueError("Failed to create review: " + str(e))
