@@ -12,12 +12,11 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # Désactive le suivi des modifications SQLAlchemy (meilleures performances)
 
 class DevelopmentConfig(Config):
-    """Development configuration settings.
-    
-    Used for local development with debugging enabled.
-    """
+    """Development configuration settings."""
     DEBUG = True
+    # SQLAlchemy configuration for development
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URI', 'sqlite:///development.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False  # Disable modification tracking for better performance
 
 class TestingConfig(Config):
     """Testing configuration settings.

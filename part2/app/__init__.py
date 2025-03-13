@@ -6,15 +6,15 @@ def create_app(config_class="config.DevelopmentConfig"):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Initialisation des extensions
+    # Initialize SQLAlchemy with the application
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
 
-    # Importation des modèles après l'initialisation des extensions
+    # Import models for SQLAlchemy table creation
     from app.models import User, Place, Review, Amenity
 
-    # Création des tables dans le contexte de l'application
+    # Create all database tables within application context
     with app.app_context():
         db.create_all()
 

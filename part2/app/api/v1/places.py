@@ -1,6 +1,6 @@
 from flask_restx import Namespace, Resource, fields
 from app.services import facade
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 api = Namespace('places', description='Places management')
 
@@ -112,14 +112,19 @@ class PlaceResource(Resource):
     @api.response(400, 'Validation Error')
     @api.response(403, 'Unauthorized action')
     def put(self, place_id):
-        """Update a place (Owner only)"""
+        """Update a place (Owner or Admin only)"""
         current_user = get_jwt_identity()
+        claims = get_jwt()
+        is_admin = claims.get('is_admin', False)
+        
         try:
             place = facade.get_place(place_id)
-            if place is None:
+            if not place:
                 api.abort(404, f"Place {place_id} not found")
-            if place.owner_id != current_user:
+            # Skip owner check if admin
+            if not is_admin and place.owner_id != current_user:
                 api.abort(403, "Unauthorized action")
+                
             updated_place = facade.update_place(place_id, api.payload, current_user)
             return updated_place.to_dict()
         except ValueError as e:
@@ -131,14 +136,19 @@ class PlaceResource(Resource):
     @api.response(404, 'Place not found')
     @api.response(403, 'Unauthorized action')
     def delete(self, place_id):
-        """Delete a place (Owner only)"""
+        """Delete a place (Owner or Admin only)"""
         current_user = get_jwt_identity()
+        claims = get_jwt()
+        is_admin = claims.get('is_admin', False)
+        
         try:
             place = facade.get_place(place_id)
-            if place is None:
+            if not place:
                 api.abort(404, f"Place {place_id} not found")
-            if place.owner_id != current_user:
+            # Skip owner check if admin
+            if not is_admin and place.owner_id != current_user:
                 api.abort(403, "Unauthorized action")
+                
             facade.delete_place(place_id)
             return '', 204
         except ValueError as e:

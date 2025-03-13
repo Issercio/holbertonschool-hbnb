@@ -1,7 +1,7 @@
 from flask_restx import Namespace, Resource, fields
 from app.services import facade
 from werkzeug.exceptions import BadRequest
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 api = Namespace('users', description='User operations')
 
@@ -56,12 +56,17 @@ class UserList(Resource):
             'per_page': per_page
         }
 
+    @jwt_required()
     @api.doc('create_user')
     @api.expect(user_model)
     @api.marshal_with(user_response_model, code=201, mask=False)
     @api.response(400, 'Validation Error')
+    @api.response(403, 'Admin privileges required')
     def post(self):
-        """Create a new user"""
+        """Create a new user (Admin only)"""
+        claims = get_jwt()
+        if not claims.get('is_admin', False):
+            api.abort(403, "Admin privileges required")
         try:
             new_user = facade.create_user(api.payload)
             return new_user.to_dict(), 201
@@ -90,15 +95,21 @@ class User(Resource):
     @api.response(400, 'Validation Error')
     @api.response(403, 'Unauthorized action')
     def put(self, user_id):
-        """Update a user (Owner only)."""
+        """Update a user (Owner or Admin only)"""
         current_user = get_jwt_identity()
-        if user_id != current_user:
+        claims = get_jwt()
+        is_admin = claims.get('is_admin', False)
+        
+        if not is_admin and user_id != current_user:
             api.abort(403, "Unauthorized action")
+            
         try:
-            # Remove email and password from payload if present
-            update_data = {k: v for k, v in api.payload.items() if k not in ['email', 'password']}
-            if not update_data:
-                api.abort(400, "No valid fields to update")
+            # Allow all fields if admin
+            update_data = api.payload if is_admin else {
+                k: v for k, v in api.payload.items() 
+                if k in ['first_name', 'last_name']
+            }
+            
             updated_user = facade.update_user(user_id, update_data)
             if not updated_user:
                 api.abort(404, f"User {user_id} not found")
