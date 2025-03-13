@@ -19,24 +19,6 @@ user_model = api.model('User', {
         min_length=1,
         max_length=50,
         example='Doe'
-    ),
-    'email': fields.String(
-        required=True, 
-        description='Email of the user, must be in valid format',
-        pattern=r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
-        example='john.doe@example.com'
-    ),
-    'is_admin': fields.Boolean(
-        required=False, 
-        default=False,
-        description='Admin status, defaults to False',
-        example=False
-    ),
-    'password': fields.String(
-        required=True,
-        description='Password for the user account (min 8 characters)',
-        min_length=8,
-        example='strongpassword123'
     )
 })
 
@@ -50,16 +32,29 @@ user_response_model = api.model('UserResponse', {
     'updated_at': fields.DateTime(description='Timestamp of last update')
 })
 
+password_change_model = api.model('PasswordChange', {
+    'current_password': fields.String(required=True, description='Current password'),
+    'new_password': fields.String(required=True, description='New password')
+})
+
 @api.route('/')
 class UserList(Resource):
     @jwt_required()
     @api.doc('list_users')
     @api.marshal_list_with(user_response_model, mask=False)
+    @api.param('page', 'Page number', type=int, default=1)
+    @api.param('per_page', 'Items per page', type=int, default=10)
     def get(self):
         """List all users"""
-        current_user = get_jwt_identity()
-        users = facade.get_users()
-        return [user.to_dict() for user in users]
+        page = api.payload.get('page', 1)
+        per_page = api.payload.get('per_page', 10)
+        users, total = facade.get_users(page=page, per_page=per_page)
+        return {
+            'items': [user.to_dict() for user in users],
+            'total': total,
+            'page': page,
+            'per_page': per_page
+        }
 
     @api.doc('create_user')
     @api.expect(user_model)
@@ -93,11 +88,18 @@ class User(Resource):
     @api.expect(user_model)
     @api.marshal_with(user_response_model, mask=False)
     @api.response(400, 'Validation Error')
+    @api.response(403, 'Unauthorized action')
     def put(self, user_id):
-        """Update a user."""
+        """Update a user (Owner only)."""
         current_user = get_jwt_identity()
+        if user_id != current_user:
+            api.abort(403, "Unauthorized action")
         try:
-            updated_user = facade.update_user(user_id, api.payload)
+            # Remove email and password from payload if present
+            update_data = {k: v for k, v in api.payload.items() if k not in ['email', 'password']}
+            if not update_data:
+                api.abort(400, "No valid fields to update")
+            updated_user = facade.update_user(user_id, update_data)
             if not updated_user:
                 api.abort(404, f"User {user_id} not found")
             return updated_user.to_dict()
@@ -107,9 +109,32 @@ class User(Resource):
     @jwt_required()
     @api.doc('delete_user')
     @api.response(204, 'User deleted')
+    @api.response(403, 'Unauthorized action')
     def delete(self, user_id):
-        """Delete a user"""
+        """Delete a user (Owner only)"""
         current_user = get_jwt_identity()
+        if user_id != current_user:
+            api.abort(403, "Unauthorized action")
         if facade.delete_user(user_id):
             return '', 204
         api.abort(404, f"User {user_id} not found")
+
+@api.route('/<string:user_id>/change-password')
+@api.param('user_id', 'The user identifier')
+class UserPasswordChange(Resource):
+    @jwt_required()
+    @api.doc('change_password')
+    @api.expect(password_change_model)
+    @api.response(200, 'Password changed successfully')
+    @api.response(400, 'Invalid password')
+    @api.response(403, 'Unauthorized action')
+    def post(self, user_id):
+        """Change user password (Owner only)"""
+        current_user = get_jwt_identity()
+        if user_id != current_user:
+            api.abort(403, "Unauthorized action")
+        try:
+            facade.change_user_password(user_id, api.payload['current_password'], api.payload['new_password'])
+            return {'message': 'Password changed successfully'}, 200
+        except ValueError as e:
+            api.abort(400, str(e))

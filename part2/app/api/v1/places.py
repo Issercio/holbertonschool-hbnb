@@ -27,7 +27,7 @@ review_model = api.model('PlaceReview', {
 # Model for creating a place
 place_model = api.model('Place', {
     'title': fields.String(required=True, description='Place title', min_length=1, max_length=100),
-    'owner_id': fields.String(required=True, description='Owner identifier'),
+    'owner_id': fields.String(required=False, description='Owner identifier'),  # Automatically set to current user
     'description': fields.String(required=False, description='Detailed place description'),
     'price': fields.Float(required=False, default=0.0, description='Price per night (positive value)'),
     'latitude': fields.Float(required=False, default=0.0, description='Latitude (-90 to 90)'),
@@ -66,12 +66,10 @@ place_response_model = api.model('PlaceResponse', {
 
 @api.route('/')
 class PlaceList(Resource):
-    @jwt_required()
     @api.doc('list_places')
     @api.marshal_list_with(place_response_model, mask=False)
     def get(self):
-        """Get list of all places"""
-        current_user = get_jwt_identity()
+        """Get list of all places (Public)"""
         places = facade.get_places()
         return [place.to_dict() for place in places]
 
@@ -81,26 +79,26 @@ class PlaceList(Resource):
     @api.marshal_with(place_response_model, code=201, mask=False)
     @api.response(400, 'Validation Error')
     def post(self):
-        """Create a new place"""
+        """Create a new place (Authenticated)"""
         current_user = get_jwt_identity()
         try:
-            new_place = facade.create_place(api.payload)
+            data = api.payload
+            data['owner_id'] = current_user  # Set owner to logged-in user
+            new_place = facade.create_place(data)
             return new_place.to_dict(), 201
         except ValueError as e:
             api.abort(400, str(e))
         except Exception as e:
-            api.abort(500, f"Une erreur interne est survenue: {str(e)}")
+            api.abort(500, f"An internal error occurred: {str(e)}")
 
 @api.route('/<string:place_id>')
 @api.param('place_id', 'Unique identifier for the place')
 class PlaceResource(Resource):
-    @jwt_required()
     @api.doc('get_place')
     @api.marshal_with(place_detail_model, mask=False)
     @api.response(404, 'Place not found')
     def get(self, place_id):
-        """Get place details by ID"""
-        current_user = get_jwt_identity()
+        """Get place details by ID (Public)"""
         place = facade.get_place(place_id)
         if place is None:
             api.abort(404, f"Place {place_id} not found")
@@ -112,26 +110,48 @@ class PlaceResource(Resource):
     @api.marshal_with(place_response_model, mask=False)
     @api.response(404, 'Place not found')
     @api.response(400, 'Validation Error')
+    @api.response(403, 'Unauthorized action')
     def put(self, place_id):
-        """Update a place"""
+        """Update a place (Owner only)"""
         current_user = get_jwt_identity()
         try:
-            updated_place = facade.update_place(place_id, api.payload)
-            if updated_place is None:
+            place = facade.get_place(place_id)
+            if place is None:
                 api.abort(404, f"Place {place_id} not found")
+            if place.owner_id != current_user:
+                api.abort(403, "Unauthorized action")
+            updated_place = facade.update_place(place_id, api.payload, current_user)
             return updated_place.to_dict()
         except ValueError as e:
             api.abort(400, str(e))
 
+    @jwt_required()
+    @api.doc('delete_place')
+    @api.response(204, 'Place deleted')
+    @api.response(404, 'Place not found')
+    @api.response(403, 'Unauthorized action')
+    def delete(self, place_id):
+        """Delete a place (Owner only)"""
+        current_user = get_jwt_identity()
+        try:
+            place = facade.get_place(place_id)
+            if place is None:
+                api.abort(404, f"Place {place_id} not found")
+            if place.owner_id != current_user:
+                api.abort(403, "Unauthorized action")
+            facade.delete_place(place_id)
+            return '', 204
+        except ValueError as e:
+            api.abort(400, str(e))
+
 @api.route('/<string:place_id>/reviews')
-@api.param('place_id', 'The place identifier')
+@api.param('place_id', "The place's unique identifier")
 class PlaceReviewList(Resource):
     @jwt_required()
-    @api.response(200, 'List of reviews for the place retrieved successfully')
-    @api.response(404, 'Place not found')
+    @api.response(200, "List of reviews for the place retrieved successfully")
+    @api.response(404, "Place not found")
     def get(self, place_id):
         """Get all reviews for a specific place"""
-        current_user = get_jwt_identity()
         try:
             reviews = facade.get_reviews_by_place(place_id)
             return [review.to_dict() for review in reviews], 200

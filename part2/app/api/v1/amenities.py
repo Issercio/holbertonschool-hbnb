@@ -24,24 +24,28 @@ class AmenityList(Resource):
     @api.expect(amenity_model)
     @api.response(201, 'Amenity successfully created')
     @api.response(400, 'Invalid input data')
+    @api.response(403, 'Unauthorized')
+    @api.marshal_with(amenity_response_model)
     def post(self):
-        """Register a new amenity"""
+        """Register a new amenity (Admin only)"""
         current_user = get_jwt_identity()
+        user = facade.get_user(current_user)
+        if not user.is_admin:
+            return {'message': 'Admin privileges required'}, 403
+        
         data = api.payload
         try:
-            # Use the facade to create a new amenity
             amenity = facade.create_amenity(data)
-            return amenity.to_dict(), 201  # Ensure the response is serialized properly
+            return amenity.to_dict(), 201
         except ValueError as e:
             return {'message': str(e)}, 400
 
     @jwt_required()
     @api.response(200, 'List of amenities retrieved successfully')
+    @api.marshal_list_with(amenity_response_model)
     def get(self):
         """Retrieve a list of all amenities"""
-        current_user = get_jwt_identity()
         amenities = facade.get_all_amenities()
-        # Serialize each amenity to a dictionary for JSON response
         return [amenity.to_dict() for amenity in amenities], 200
 
 
@@ -50,13 +54,12 @@ class AmenityResource(Resource):
     @jwt_required()
     @api.response(200, 'Amenity details retrieved successfully')
     @api.response(404, 'Amenity not found')
+    @api.marshal_with(amenity_response_model)
     def get(self, amenity_id):
         """Get amenity details by ID"""
-        current_user = get_jwt_identity()
         try:
-            # Use the facade to retrieve the amenity
             amenity = facade.get_amenity(amenity_id)
-            return amenity.to_dict(), 200  # Serialize the response
+            return amenity.to_dict(), 200
         except ValueError:
             return {'message': 'Amenity not found'}, 404
 
@@ -65,15 +68,37 @@ class AmenityResource(Resource):
     @api.response(200, 'Amenity updated successfully')
     @api.response(404, 'Amenity not found')
     @api.response(400, 'Invalid input data')
+    @api.response(403, 'Unauthorized')
+    @api.marshal_with(amenity_response_model)
     def put(self, amenity_id):
-        """Update an amenity's information"""
+        """Update an amenity's information (Admin only)"""
         current_user = get_jwt_identity()
+        user = facade.get_user(current_user)
+        if not user.is_admin:
+            return {'message': 'Admin privileges required'}, 403
+        
         data = api.payload
         try:
-            # Use the facade to update the amenity
             updated_amenity = facade.update_amenity(amenity_id, data)
-            return updated_amenity.to_dict(), 200  # Serialize the response
+            return updated_amenity.to_dict(), 200
         except ValueError as e:
             if str(e) == "Amenity not found":
                 return {'message': str(e)}, 404
             return {'message': str(e)}, 400
+
+    @jwt_required()
+    @api.response(204, 'Amenity deleted')
+    @api.response(404, 'Amenity not found')
+    @api.response(403, 'Unauthorized')
+    def delete(self, amenity_id):
+        """Delete an amenity (Admin only)"""
+        current_user = get_jwt_identity()
+        user = facade.get_user(current_user)
+        if not user.is_admin:
+            return {'message': 'Admin privileges required'}, 403
+        
+        try:
+            facade.delete_amenity(amenity_id)
+            return '', 204
+        except ValueError as e:
+            return {'message': str(e)}, 404
