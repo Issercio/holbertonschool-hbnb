@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, ForeignKey
+from sqlalchemy import Column, String, Float, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from .base_model import BaseModel
 from app.extensions import db
@@ -10,15 +10,15 @@ class Place(BaseModel, db.Model):
     __tablename__ = 'places'
 
     title = Column(String(100), nullable=False)
-    description = Column(String, default="")
+    description = Column(Text)
     price = Column(Float, default=0.0)
-    latitude = Column(Float, default=0.0)
-    longitude = Column(Float, default=0.0)
-    owner_id = Column(String, ForeignKey('users.id'), nullable=False)
+    latitude = Column(Float)
+    longitude = Column(Float)
+    owner_id = Column(String(36), ForeignKey('users.id'), nullable=False)
 
     owner = relationship("User", back_populates="places")
     amenities = relationship("Amenity", secondary=place_amenity, back_populates="places")  # Utilisation de la table d'association
-    reviews = relationship("Review", back_populates="place")
+    reviews = relationship("Review", back_populates="place", cascade="all, delete-orphan")
 
     def __init__(self, title, owner, description="", price=0.0, latitude=0.0, longitude=0.0, **kwargs):
         super().__init__(**kwargs)

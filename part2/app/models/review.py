@@ -1,18 +1,18 @@
-from sqlalchemy import Column, String, Integer, ForeignKey
+from sqlalchemy import Column, String, Integer, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.exc import IntegrityError
 from .base_model import BaseModel
 from app.extensions import db
 
 class Review(BaseModel, db.Model):
-    """Class representing a review"""
+    """Review model for property reviews"""
     
     __tablename__ = 'reviews'
 
-    text = Column(String, nullable=False)
+    text = Column(Text, nullable=False)
     rating = Column(Integer, nullable=False)
-    place_id = Column(String, ForeignKey('places.id'), nullable=False)
-    user_id = Column(String, ForeignKey('users.id'), nullable=False)
+    place_id = Column(String(36), ForeignKey('places.id'), nullable=False)
+    user_id = Column(String(36), ForeignKey('users.id'), nullable=False)
 
     # Relations
     place = relationship("Place", back_populates="reviews")

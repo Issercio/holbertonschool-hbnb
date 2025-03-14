@@ -16,7 +16,6 @@ class DevelopmentConfig(Config):
     DEBUG = True
     # SQLAlchemy configuration for development
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URI', 'sqlite:///development.db')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False  # Disable modification tracking for better performance
 
 class TestingConfig(Config):
     """Testing configuration settings.

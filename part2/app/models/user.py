@@ -18,8 +18,8 @@ class User(BaseModel, db.Model):
     password = Column(String(60), nullable=False)
 
     # Relations
-    reviews = relationship("Review", back_populates="user")
-    places = relationship("Place", back_populates="owner")
+    reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
+    places = relationship("Place", back_populates="owner", cascade="all, delete-orphan")
 
     def __init__(self, first_name, last_name, email, password, is_admin=False, **kwargs):
         """Initialize a new User instance."""
