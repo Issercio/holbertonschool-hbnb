@@ -3,6 +3,16 @@ from flask_restx import Api
 from app.extensions import db, bcrypt, jwt
 
 def create_app(config_class="config.DevelopmentConfig"):
+    """
+    Crée et configure l'application Flask.
+    
+    Args:
+        config_class (str): Chemin vers la classe de configuration à utiliser.
+            Par défaut, "config.DevelopmentConfig".
+    
+    Returns:
+        Flask: L'application Flask configurée.
+    """
     app = Flask(__name__)
     app.config.from_object(config_class)
     

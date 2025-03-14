@@ -1,19 +1,20 @@
-from sqlalchemy import Column, String, DateTime
 from sqlalchemy.ext.declarative import declared_attr
 from uuid import uuid4
 from datetime import datetime
 from app.extensions import db
 
-class BaseModel:
+class BaseModel(db.Model):
     """Base class for all models"""
     
+    __abstract__ = True
+
     @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __init__(self, **kwargs):
         """Initialize base model with common attributes"""

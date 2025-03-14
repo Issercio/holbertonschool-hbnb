@@ -11,7 +11,9 @@ class Amenity(BaseModel, db.Model):
     __tablename__ = 'amenities'
 
     name = Column(String(50), nullable=False, unique=True)
-    places = relationship('Place', secondary=place_amenity, back_populates='amenities')  # Utilisez la table d'association importée
+
+    # Relation rétablie
+    places = relationship('Place', secondary=place_amenity, back_populates='amenities')
 
     def __init__(self, name: str):
         """
@@ -37,16 +39,6 @@ class Amenity(BaseModel, db.Model):
         """
         if not name or len(name) > 50:
             raise ValueError("Amenity name must be between 1 and 50 characters")
-
-    def add_place(self, place):
-        """
-        Add a place to the amenity.
-        
-        Args:
-            place (Place): Place object to add
-        """
-        if place not in self.places:
-            self.places.append(place)
 
     def to_dict(self):
         """

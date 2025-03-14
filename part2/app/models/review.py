@@ -9,16 +9,17 @@ class Review(BaseModel, db.Model):
     
     __tablename__ = 'reviews'
 
+    # Colonnes de base
     text = Column(String, nullable=False)
     rating = Column(Integer, nullable=False)
     place_id = Column(String, ForeignKey('places.id'), nullable=False)
     user_id = Column(String, ForeignKey('users.id'), nullable=False)
 
-    # Relations
+    # Relations (rétablies)
     place = relationship("Place", back_populates="reviews")
     user = relationship("User", back_populates="reviews")
 
-    def __init__(self, text, rating, place=None, user=None, **kwargs):
+    def __init__(self, text, rating, place_id=None, user_id=None, **kwargs):
         """Initialize a new Review instance."""
         super().__init__(**kwargs)
         self.validate_text(text)
@@ -26,11 +27,8 @@ class Review(BaseModel, db.Model):
 
         self.text = text
         self.rating = rating
-
-        if place:
-            self.validate_relationships(place, user)
-            self.place = place
-            self.user = user
+        self.place_id = place_id
+        self.user_id = user_id
 
     @staticmethod
     def validate_text(text):
@@ -44,25 +42,14 @@ class Review(BaseModel, db.Model):
         if not isinstance(rating, int) or not 1 <= rating <= 5:
             raise ValueError("Rating must be an integer between 1 and 5")
 
-    @staticmethod
-    def validate_relationships(place, user):
-        """Validate that the review is associated with valid Place and User instances."""
-        from .place import Place
-        from .user import User
-
-        if not isinstance(place, Place):
-            raise ValueError("Review must be associated with a valid Place")
-        if not isinstance(user, User):
-            raise ValueError("Review must be associated with a valid User")
-
     def to_dict(self):
         """Convert review instance to dictionary representation."""
         review_dict = super().to_dict()
         review_dict.update({
             'text': self.text,
             'rating': self.rating,
-            'place_id': self.place.id if self.place else None,
-            'user_id': self.user.id if self.user else None,
+            'place_id': self.place_id,
+            'user_id': self.user_id,
             'created_at': self.created_at,
             'updated_at': self.updated_at
         })
@@ -87,22 +74,19 @@ class Review(BaseModel, db.Model):
                     raise ValueError("Rating must be an integer between 1 and 5")
             
             # Validate User and Place relationships
-            from .place import Place
-            from .user import User
-
-            place = Place.query.get(review_data['place_id'])
-            user = User.query.get(review_data['user_id'])
-            if not place:
+            place_id = review_data.get('place_id')
+            user_id = review_data.get('user_id')
+            if not place_id:
                 raise ValueError("Invalid place_id provided")
-            if not user:
+            if not user_id:
                 raise ValueError("Invalid user_id provided")
             
             # Create the review instance
             review = cls(
                 text=review_data['text'],
                 rating=rating,
-                place=place,
-                user=user
+                place_id=place_id,
+                user_id=user_id
             )
             
             db.session.add(review)

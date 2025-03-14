@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from .base_model import BaseModel
 from app.extensions import db
-from .association_tables import place_amenity  # Import de la table d'association
+from .association_tables import place_amenity
 
 class Place(BaseModel, db.Model):
     """Class representing a rental place"""
@@ -14,33 +14,29 @@ class Place(BaseModel, db.Model):
     price = Column(Float, default=0.0)
     latitude = Column(Float, default=0.0)
     longitude = Column(Float, default=0.0)
-    owner_id = Column(String, ForeignKey('users.id'), nullable=False)
 
+    # Relations (rétablies)
+    owner_id = Column(String, ForeignKey('users.id'), nullable=False)
     owner = relationship("User", back_populates="places")
-    amenities = relationship("Amenity", secondary=place_amenity, back_populates="places")  # Utilisation de la table d'association
+    amenities = relationship("Amenity", secondary=place_amenity, back_populates="places")
     reviews = relationship("Review", back_populates="place")
 
-    def __init__(self, title, owner, description="", price=0.0, latitude=0.0, longitude=0.0, **kwargs):
+    def __init__(self, title, description="", price=0.0, latitude=0.0, longitude=0.0, owner_id=None, **kwargs):
+        """Initialize a new Place instance."""
         super().__init__(**kwargs)
         self.validate_title(title)
-        self.validate_owner(owner)
         self.title = title
-        self.owner = owner
         self.description = description
         self.price = price
         self.latitude = latitude
         self.longitude = longitude
+        self.owner_id = owner_id
 
     @staticmethod
     def validate_title(title):
+        """Validate that the title is not empty and less than 100 characters."""
         if not title or len(title) > 100:
             raise ValueError("Title must be between 1 and 100 characters")
-
-    @staticmethod
-    def validate_owner(owner):
-        from .user import User
-        if not isinstance(owner, User):
-            raise TypeError("Owner must be a User instance")
 
     @property
     def price(self):
@@ -48,6 +44,7 @@ class Place(BaseModel, db.Model):
 
     @price.setter
     def price(self, value):
+        """Validate that the price is non-negative."""
         if not isinstance(value, (int, float)) or value < 0:
             raise ValueError("Price must be a non-negative number")
         self._price = float(value)
@@ -58,6 +55,7 @@ class Place(BaseModel, db.Model):
 
     @latitude.setter
     def latitude(self, value):
+        """Validate that the latitude is between -90 and 90."""
         if not isinstance(value, (int, float)) or not -90 <= float(value) <= 90:
             raise ValueError("Latitude must be between -90 and 90")
         self._latitude = float(value)
@@ -68,19 +66,13 @@ class Place(BaseModel, db.Model):
 
     @longitude.setter
     def longitude(self, value):
+        """Validate that the longitude is between -180 and 180."""
         if not isinstance(value, (int, float)) or not -180 <= float(value) <= 180:
             raise ValueError("Longitude must be between -180 and 180")
         self._longitude = float(value)
 
-    def add_amenity(self, amenity):
-        if amenity not in self.amenities:
-            self.amenities.append(amenity)
-
-    def add_review(self, review):
-        if review not in self.reviews:
-            self.reviews.append(review)
-
     def to_dict(self):
+        """Convert place instance to dictionary representation."""
         place_dict = super().to_dict()
         place_dict.update({
             'title': self.title,
@@ -88,7 +80,7 @@ class Place(BaseModel, db.Model):
             'price': self.price,
             'latitude': self.latitude,
             'longitude': self.longitude,
-            'owner_id': self.owner.id if self.owner else None,
+            'owner_id': self.owner_id,
             'amenities': [amenity.id for amenity in self.amenities] if self.amenities else []
         })
         return place_dict

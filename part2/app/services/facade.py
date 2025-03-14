@@ -3,6 +3,7 @@ from app.models.user import User
 from app.models.place import Place
 from app.models.review import Review
 from app.models.amenity import Amenity
+from app.persistence.user_repository import UserRepository
 from abc import ABC, abstractmethod
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -78,7 +79,7 @@ class SQLAlchemyRepository(Repository):
 
 class Facade:
     def __init__(self):
-        self.user_repository = SQLAlchemyRepository(User)
+        self.user_repository = UserRepository()
         self.place_repository = SQLAlchemyRepository(Place)
         self.amenity_repository = SQLAlchemyRepository(Amenity)
         self.review_repository = SQLAlchemyRepository(Review)
@@ -93,19 +94,10 @@ class Facade:
         return user.to_dict() if user else None
 
     def get_user_by_email(self, email):
-        return self.user_repository.get_by_attribute('email', email)
+        return self.user_repository.get_by_email(email)
 
     def create_user(self, user_data):
-        if self.get_user_by_email(user_data['email']):
-            raise ValueError("Email already registered")
-        user = User(
-            first_name=user_data['first_name'],
-            last_name=user_data['last_name'],
-            email=user_data['email'],
-            password=generate_password_hash(user_data['password']),
-            is_admin=user_data.get('is_admin', False)
-        )
-        return self.user_repository.add(user).to_dict()
+        return self.user_repository.create_user(user_data)
 
     def update_user(self, user_id, user_data):
         user = self.get_user(user_id)
@@ -146,17 +138,14 @@ class Facade:
 
     # Review methods
     def create_review(self, review_data):
-        # Vérifier si l'utilisateur a déjà laissé un avis pour ce lieu
         existing_review = self.get_review_by_user_and_place(review_data['user_id'], review_data['place_id'])
         if existing_review:
             raise ValueError("User has already reviewed this place")
 
-        # Vérifier si le lieu existe
         place = self.get_place(review_data['place_id'])
         if not place:
             raise ValueError("Invalid place_id provided")
 
-        # Vérifier si l'utilisateur existe
         user = self.get_user(review_data['user_id'])
         if not user:
             raise ValueError("Invalid user_id provided")
