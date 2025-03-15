@@ -5,14 +5,14 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 api = Namespace('reviews', description='Review operations')
 
-# Define the review model for input validation and documentation
+# Définition du modèle de review (input validation et documentation)
 review_model = api.model('Review', {
     'text': fields.String(required=True, description='Text of the review'),
     'rating': fields.Integer(required=True, description='Rating of the place (1-5)'),
     'place_id': fields.String(required=True, description='ID of the place')
 })
 
-# Model for detailed review information
+# Modèle pour les informations détaillées d'une review
 review_output_model = api.model('ReviewOutput', {
     'id': fields.String(description='Review ID'),
     'text': fields.String(description='Text of the review'),
@@ -39,6 +39,8 @@ class ReviewList(Resource):
 
             # Check if the user owns the place
             place = facade.get_place(review_data['place_id'])
+            if not place:
+                api.abort(404, "Place not found")
             if place['owner_id'] == current_user:
                 api.abort(400, "You cannot review your own place")
 
@@ -88,12 +90,13 @@ class ReviewResource(Resource):
     @api.response(403, 'Unauthorized action')
     def put(self, review_id):
         """Update a review's information (Owner or Admin)"""
-        current_user = get_jwt()
+        current_user_claims = get_jwt()
+        current_user_id = get_jwt_identity()
         try:
             review = facade.get_review(review_id)
             if review is None:
                 api.abort(404, f"Review with ID {review_id} not found")
-            if not current_user.get('is_admin', False) and review['user_id'] != get_jwt_identity():
+            if not current_user_claims.get('is_admin', False) and review['user_id'] != current_user_id:
                 api.abort(403, "Unauthorized action")
 
             review_data = api.payload
@@ -108,11 +111,12 @@ class ReviewResource(Resource):
     @api.response(403, 'Unauthorized action')
     def delete(self, review_id):
         """Delete a review (Owner or Admin)"""
-        current_user = get_jwt()
+        current_user_claims = get_jwt()
+        current_user_id = get_jwt_identity()
         review = facade.get_review(review_id)
         if review is None:
             api.abort(404, f"Review with ID {review_id} not found")
-        if not current_user.get('is_admin', False) and review['user_id'] != get_jwt_identity():
+        if not current_user_claims.get('is_admin', False) and review['user_id'] != current_user_id:
             api.abort(403, "Unauthorized action")
 
         facade.delete_review(review_id)

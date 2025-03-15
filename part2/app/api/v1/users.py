@@ -1,20 +1,21 @@
 from flask_restx import Namespace, Resource, fields
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.services import facade
 from werkzeug.exceptions import BadRequest
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 api = Namespace('users', description='User operations')
 
+# Modèle pour la création ou la mise à jour d'un utilisateur
 user_model = api.model('User', {
     'first_name': fields.String(
-        required=True, 
+        required=True,
         description='First name of the user, max 50 characters',
         min_length=1,
         max_length=50,
         example='John'
     ),
     'last_name': fields.String(
-        required=True, 
+        required=True,
         description='Last name of the user, max 50 characters',
         min_length=1,
         max_length=50,
@@ -37,6 +38,7 @@ user_model = api.model('User', {
     )
 })
 
+# Modèle pour la réponse utilisateur
 user_response_model = api.model('UserResponse', {
     'id': fields.String(description='User unique identifier'),
     'first_name': fields.String(description='First name of the user'),
@@ -50,19 +52,24 @@ user_response_model = api.model('UserResponse', {
 @api.route('/')
 class UserList(Resource):
     @jwt_required()
-    @api.doc('list_users')
+    @api.doc('list_users', security='Bearer')
     @api.marshal_list_with(user_response_model, mask=False)
     @api.param('page', 'Page number', type=int, default=1)
     @api.param('per_page', 'Items per page', type=int, default=10)
     def get(self):
         """List all users (Admin only)"""
-        current_user = get_jwt()
-        if not current_user.get('is_admin', False):
+        current_user_claims = get_jwt()
+        
+        # Vérification des privilèges administrateur
+        if not current_user_claims.get('is_admin', False):
             api.abort(403, "Admin privileges required")
         
-        page = api.payload.get('page', 1)
-        per_page = api.payload.get('per_page', 10)
+        # Pagination des utilisateurs
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
         users, total = facade.get_users(page=page, per_page=per_page)
+        
         return {
             'items': [user.to_dict() for user in users],
             'total': total,
@@ -71,15 +78,17 @@ class UserList(Resource):
         }
 
     @jwt_required()
-    @api.doc('create_user')
+    @api.doc('create_user', security='Bearer')
     @api.expect(user_model)
     @api.marshal_with(user_response_model, code=201, mask=False)
     @api.response(400, 'Validation Error')
     @api.response(403, 'Admin privileges required')
     def post(self):
         """Create a new user (Admin only)"""
-        current_user = get_jwt()
-        if not current_user.get('is_admin', False):
+        current_user_claims = get_jwt()
+        
+        # Vérification des privilèges administrateur
+        if not current_user_claims.get('is_admin', False):
             api.abort(403, "Admin privileges required")
         
         try:
@@ -93,44 +102,59 @@ class UserList(Resource):
 @api.response(404, 'User not found')
 class User(Resource):
     @jwt_required()
-    @api.doc('get_user')
+    @api.doc('get_user', security='Bearer')
     @api.marshal_with(user_response_model, mask=False)
     def get(self, user_id):
         """Get a user by ID."""
-        current_user = get_jwt()
-        if not current_user.get('is_admin', False) and user_id != get_jwt_identity():
+        
+        # Récupération des revendications du token JWT
+        current_user_claims = get_jwt()
+        
+        # Vérification des permissions : admin ou propriétaire du compte
+        if not current_user_claims.get('is_admin', False) and user_id != get_jwt_identity():
             api.abort(403, "Unauthorized action")
         
+        # Récupération de l'utilisateur
         user = facade.get_user(user_id)
+        
         if not user:
             api.abort(404, f"User {user_id} not found")
+        
         return user.to_dict()
 
     @jwt_required()
-    @api.doc('update_user')
+    @api.doc('update_user', security='Bearer')
     @api.expect(user_model)
     @api.marshal_with(user_response_model, mask=False)
     @api.response(400, 'Validation Error')
     @api.response(403, 'Unauthorized action')
     def put(self, user_id):
         """Update a user (Admin or Owner)."""
-        current_user = get_jwt()
-        if not current_user.get('is_admin', False) and user_id != get_jwt_identity():
+        
+        # Récupération des revendications du token JWT
+        current_user_claims = get_jwt()
+        
+        # Vérification des permissions : admin ou propriétaire du compte
+        if not current_user_claims.get('is_admin', False) and user_id != get_jwt_identity():
             api.abort(403, "Unauthorized action")
         
         try:
-            # Admin can update all fields, owner can't update email and is_admin
-            if current_user.get('is_admin', False):
+            # Admin peut tout modifier; propriétaire ne peut pas modifier certains champs sensibles
+            if current_user_claims.get('is_admin', False):
                 update_data = api.payload
             else:
-                update_data = {k: v for k, v in api.payload.items() if k not in ['email', 'is_admin']}
+                allowed_fields = ['first_name', 'last_name', 'password']
+                update_data = {k: v for k, v in api.payload.items() if k in allowed_fields}
             
             if not update_data:
                 api.abort(400, "No valid fields to update")
             
             updated_user = facade.update_user(user_id, update_data)
+            
             if not updated_user:
                 api.abort(404, f"User {user_id} not found")
+            
             return updated_user.to_dict()
+        
         except ValueError as e:
             api.abort(400, str(e))

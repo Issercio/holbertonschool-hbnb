@@ -1,16 +1,14 @@
-.headers on
-.mode column
+-- Afficher les informations sur la base de données
+.database
 
-PRAGMA foreign_keys = ON;
-
-.databases
-
+-- Afficher la liste des tables
 .tables
 
-SELECT * FROM users;
+-- Afficher le schéma de la table User
+.schema User
 
-SELECT * FROM amenities;
+-- Sélectionner tous les utilisateurs
+SELECT * FROM User;
 
-PRAGMA foreign_key_check;
-
-.quit
+-- Sélectionner toutes les amenités
+SELECT * FROM Amenity;

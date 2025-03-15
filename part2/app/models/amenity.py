@@ -1,16 +1,18 @@
-# models/amenity.py
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .base_model import BaseModel
 from app.extensions import db
-from .association_tables import place_amenity  # Importez la table d'association
+from .association_tables import place_amenity
 
-class Amenity(BaseModel, db.Model):
+class Amenity(BaseModel):
     """Class representing an amenity in the system."""
 
     __tablename__ = 'amenities'
+    __table_args__ = (
+        UniqueConstraint('name', name='uq_amenity_name'),
+    )
 
-    name = Column(String(50), nullable=False, unique=True)
+    name = Column(String(50), nullable=False)
 
     # Relation rétablie
     places = relationship('Place', secondary=place_amenity, back_populates='amenities')

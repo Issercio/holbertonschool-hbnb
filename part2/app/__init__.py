@@ -1,6 +1,9 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_restx import Api
 from app.extensions import db, bcrypt, jwt
+from datetime import timedelta
+from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
 
 def create_app(config_class="config.DevelopmentConfig"):
     """
@@ -16,24 +19,45 @@ def create_app(config_class="config.DevelopmentConfig"):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
+    # Configuration spécifique JWT
+    app.config['JWT_SECRET_KEY'] = app.config.get('SECRET_KEY', 'fallback-secret-key')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+    
     # Initialisation des extensions
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
+    migrate = Migrate(app, db)
+
+    # Configuration du gestionnaire JWT
+    jwt_manager = JWTManager(app)
+
+    @jwt_manager.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return jsonify({"message": "Token has expired"}), 401
+
+    @jwt_manager.invalid_token_loader
+    def invalid_token_callback(error):
+        return jsonify({"message": "Invalid token"}), 401
 
     # Importation des modèles après l'initialisation des extensions
     from app.models import User, Place, Review, Amenity
-
-    # Création des tables dans le contexte de l'application
-    with app.app_context():
-        db.create_all()
 
     api = Api(
         app, 
         version='1.0', 
         title='HBNB API', 
         description='HBNB Application API', 
-        doc='/api/v1/'
+        doc='/api/v1/',
+        authorizations={
+            'Bearer': {
+                'type': 'apiKey',
+                'in': 'header',
+                'name': 'Authorization',
+                'description': "Type in the *'Value'* input box below: **'Bearer &lt;JWT&gt;'**, where JWT is the token"
+            }
+        },
+        security='Bearer'
     )
 
     # Import des namespaces

@@ -4,6 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 api = Namespace('places', description='Places management')
 
+# Modèles pour les réponses et les requêtes
 amenity_model = api.model('PlaceAmenity', {
     'id': fields.String(description='Amenity identifier'),
     'name': fields.String(description='Amenity name')
@@ -70,7 +71,7 @@ class PlaceList(Resource):
         return [place.to_dict() for place in places]
 
     @jwt_required()
-    @api.doc('create_place')
+    @api.doc('create_place', security="Bearer")
     @api.expect(place_model)
     @api.marshal_with(place_response_model, code=201, mask=False)
     @api.response(400, 'Validation Error')
@@ -101,7 +102,7 @@ class PlaceResource(Resource):
         return place.to_dict()
 
     @jwt_required()
-    @api.doc('update_place')
+    @api.doc('update_place', security="Bearer")
     @api.expect(place_model)
     @api.marshal_with(place_response_model, mask=False)
     @api.response(404, 'Place not found')
@@ -109,31 +110,31 @@ class PlaceResource(Resource):
     @api.response(403, 'Unauthorized action')
     def put(self, place_id):
         """Update a place (Owner or Admin)"""
-        current_user = get_jwt()
+        current_user_claims = get_jwt()
         try:
             place = facade.get_place(place_id)
             if place is None:
                 api.abort(404, f"Place {place_id} not found")
-            if not current_user.get('is_admin', False) and place.owner_id != get_jwt_identity():
+            if not current_user_claims.get('is_admin', False) and place.owner_id != get_jwt_identity():
                 api.abort(403, "Unauthorized action")
-            updated_place = facade.update_place(place_id, api.payload, get_jwt_identity())
+            updated_place = facade.update_place(place_id, api.payload)
             return updated_place.to_dict()
         except ValueError as e:
             api.abort(400, str(e))
 
     @jwt_required()
-    @api.doc('delete_place')
+    @api.doc('delete_place', security="Bearer")
     @api.response(204, 'Place deleted')
     @api.response(404, 'Place not found')
     @api.response(403, 'Unauthorized action')
     def delete(self, place_id):
         """Delete a place (Owner or Admin)"""
-        current_user = get_jwt()
+        current_user_claims = get_jwt()
         try:
             place = facade.get_place(place_id)
             if place is None:
                 api.abort(404, f"Place {place_id} not found")
-            if not current_user.get('is_admin', False) and place.owner_id != get_jwt_identity():
+            if not current_user_claims.get('is_admin', False) and place.owner_id != get_jwt_identity():
                 api.abort(403, "Unauthorized action")
             facade.delete_place(place_id)
             return '', 204
@@ -143,13 +144,5 @@ class PlaceResource(Resource):
 @api.route('/<string:place_id>/reviews')
 @api.param('place_id', "The place's unique identifier")
 class PlaceReviewList(Resource):
-    @jwt_required()
-    @api.response(200, "List of reviews for the place retrieved successfully")
-    @api.response(404, "Place not found")
-    def get(self, place_id):
-        """Get all reviews for a specific place"""
-        try:
-            reviews = facade.get_reviews_by_place(place_id)
-            return [review.to_dict() for review in reviews], 200
-        except ValueError as e:
-            return {'message': str(e)}, 404
+    
+   ...
