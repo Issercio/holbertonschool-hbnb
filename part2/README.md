@@ -1,114 +1,65 @@
-# HBnB - Business Logic Layer
+# HBnB API - Part 2
 
-## Features
-- UUID-based identification
-- Timestamp tracking
-- Data validation
-- Relationship management
-- Object serialization
-- Comprehensive unit tests
+## Overview
+HBnB (Holberton Bed & Breakfast) API is a RESTful web service that manages property rentals, user accounts, reviews, and amenities. This project implements a robust backend using Flask, SQLAlchemy, and JWT authentication.
 
-## Requirements
-- Python 3.7+
-- UUID module
-- DateTime module
+## Key Features
+1. **Authentication & Authorization**
+   - JWT-based authentication
+   - Role-based access control (Admin/User)
+   - Secure password hashing with bcrypt
 
-## Project Structure
+2. **Data Models**
+   - User: Account management and authentication
+   - Place: Property listings with location and pricing
+   - Review: User reviews for properties
+   - Amenity: Property features and facilities
 
-### Models
-The application is built around four core models:
+3. **Architecture**
+   - Repository Pattern for data access
+   - Facade Pattern for business logic
+   - SQLAlchemy ORM for database operations
 
-#### BaseModel
-- Provides common functionality for all models
-- Attributes:
-  - `id`: UUID string
-  - `created_at`: DateTime of creation
-  - `updated_at`: DateTime of last update
-- Methods:
-  - `save()`: Updates the updated_at timestamp
-  - `update(data)`: Updates attributes from dictionary
+4. **API Endpoints**
+   - `/api/v1/auth`: Authentication operations
+   - `/api/v1/users`: User management
+   - `/api/v1/places`: Property operations
+   - `/api/v1/reviews`: Review management
+   - `/api/v1/amenities`: Amenity operations
 
-#### User
-- Manages user information and relationships
-- Attributes:
-  - `first_name`: String (max 50 chars)
-  - `last_name`: String (max 50 chars)
-  - `email`: Valid email address
-  - `is_admin`: Boolean
-- Methods:
-  - `add_place(place)`: Associates a place with user
-  - `add_review(review)`: Associates a review with user
+5. **Database Structure**
+   - SQLite for development
+   - Proper relationships (One-to-Many, Many-to-Many)
+   - Data validation and integrity constraints
 
-#### Place
-- Handles rental property information
-- Attributes:
-  - `title`: String (max 100 chars)
-  - `description`: String
-  - `price`: Positive float
-  - `latitude`: Float (-90 to 90)
-  - `longitude`: Float (-180 to 180)
-  - `owner`: User reference
-- Methods:
-  - `add_review(review)`: Adds a review
-  - `add_amenity(amenity)`: Adds an amenity
-
-#### Review
-- Manages user reviews for places
-- Attributes:
-  - `text`: Review content
-  - `rating`: Integer (1-5)
-  - `place`: Place reference
-  - `user`: User reference
-
-#### Amenity
-- Represents available features
-- Attributes:
-  - `name`: String (max 50 chars)
-
-## Usage Examples
-
-### Creating a User and Place
-```python
-# Create a new user
-user = User(
-    first_name="John",
-    last_name="Doe",
-    email="john.doe@example.com"
-)
-
-# Create a place owned by the user
-place = Place(
-    title="Cozy Apartment",
-    description="Beautiful city center apartment",
-    price=100.0,
-    latitude=48.8566,
-    longitude=2.3522,
-    owner=user
-)
-
-# Add amenities
-wifi = Amenity("Wi-Fi")
-place.add_amenity(wifi)
-
-# Add a review
-review = Review(
-    text="Great stay!",
-    rating=5,
-    place=place,
-    user=user
-)
-```
-
-## Installation
+## Getting Started
 ```bash
-python3 -m venv env
-source env/bin/activate
+# Install dependencies
 pip install -r requirements.txt
+
+# Run the application
+python run.py
 ```
 
-## Running Tests
-```bash
-python -m unittest tests/test_models.py
-```
+## API Documentation
+API documentation is available at `/api/v1/` when running the application.
+
+## Database Schema
+The application uses SQLAlchemy models with the following relationships:
+- User -> Places (One-to-Many)
+- User -> Reviews (One-to-Many)
+- Place -> Reviews (One-to-Many)
+- Place <-> Amenities (Many-to-Many)
+
+## Diagramme
+
+
+## Conclusion
+This project demonstrates a well-structured API implementation using modern Python web development practices. It provides a solid foundation for property rental management with proper security measures and efficient data handling.
+
+## Authors
+- Dimitri Jaille
+- Mattieu Mouroux
+
 
 
