@@ -2,7 +2,7 @@
 
 ## 📁 Project Structure
 ```bash
-hbnb-2/
+hbnb/
 ├── app/
 │   ├── __init__.py           # App initialization and configuration
 │   ├── api/
