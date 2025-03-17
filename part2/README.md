@@ -1,138 +1,180 @@
-# 🏠 HBnB - Business Logic Layer
+# HBNB API Documentation
 
-## 🎯 Features
-Notre application offre un ensemble complet de fonctionnalités essentielles :
-- **UUID-based identification**: Identifiants uniques pour chaque objet
-- **Timestamp tracking**: Suivi précis des dates de création et modification
-- **Data validation**: Validation robuste des données entrantes
-- **Relationship management**: Gestion intelligente des relations entre objets
-- **Object serialization**: Conversion facile des objets pour le stockage/transmission
-- **Comprehensive unit tests**: Tests complets pour assurer la fiabilité
-
-## 📋 Requirements
-Pour démarrer avec le projet, vous aurez besoin de :
-- Python 3.7 ou version supérieure
-- Module UUID pour la génération d'identifiants uniques
-- Module DateTime pour la gestion des timestamps
-- Un environnement virtuel Python (recommandé)
-
-## 🏗️ Project Structure
-
-### 📦 Models
-L'application est construite autour de quatre modèles principaux, chacun avec un rôle spécifique dans l'écosystème :
-
-#### 🔧 BaseModel
-Le modèle de base dont héritent tous les autres modèles :
-- **Rôle**: Fournit les fonctionnalités communes à tous les modèles
-- **Attributs**:
-  - `id`: Identifiant unique UUID (jamais répété)
-  - `created_at`: Horodatage de création
-  - `updated_at`: Horodatage de dernière modification
-- **Méthodes principales**:
-  - `save()`: Met à jour l'horodatage
-  - `update(data)`: Met à jour les attributs depuis un dictionnaire
-
-#### 👤 User
-Gestion des utilisateurs de la plateforme :
-- **Rôle**: Stocke et gère les informations utilisateur
-- **Attributs**:
-  - `first_name`: Prénom (limité à 50 caractères)
-  - `last_name`: Nom (limité à 50 caractères)
-  - `email`: Adresse email (validée)
-  - `is_admin`: Statut administrateur
-- **Méthodes clés**:
-  - `add_place(place)`: Lie un logement à l'utilisateur
-  - `add_review(review)`: Ajoute un avis
-
-#### 🏡 Place
-Gestion des propriétés à louer :
-- **Rôle**: Centralise les informations sur les logements
-- **Attributs**:
-  - `title`: Titre de l'annonce (max 100 caractères)
-  - `description`: Description détaillée
-  - `price`: Prix par nuit (nombre positif)
-  - `latitude` & `longitude`: Coordonnées géographiques
-  - `owner`: Référence au propriétaire
-- **Méthodes importantes**:
-  - `add_review(review)`: Ajoute un avis
-  - `add_amenity(amenity)`: Ajoute un équipement
-
-#### ⭐ Review
-Système d'avis et de notation :
-- **Rôle**: Permet aux utilisateurs de partager leur expérience
-- **Attributs**:
-  - `text`: Contenu de l'avis
-  - `rating`: Note de 1 à 5
-  - `place`: Référence au logement
-  - `user`: Référence à l'auteur
-
-#### 🛋️ Amenity
-Gestion des équipements disponibles :
-- **Rôle**: Liste les caractéristiques des logements
-- **Attributs**:
-  - `name`: Nom de l'équipement (max 50 caractères)
-
-## 💻 Usage Examples
-Voici comment utiliser les principales fonctionnalités :
-
-### 📝 Creating a User and Place
-```python
-# Create a new user
-user = User(
-    first_name="John",
-    last_name="Doe",
-    email="john.doe@example.com"
-)
-
-# Create a place owned by the user
-place = Place(
-    title="Cozy Apartment",
-    description="Beautiful city center apartment",
-    price=100.0,
-    latitude=48.8566,
-    longitude=2.3522,
-    owner=user
-)
-
-# Add amenities
-wifi = Amenity("Wi-Fi")
-place.add_amenity(wifi)
-
-# Add a review
-review = Review(
-    text="Great stay!",
-    rating=5,
-    place=place,
-    user=user
-)
+## 📁 Project Structure
+```bash
+hbnb-2/
+├── app/
+│   ├── __init__.py           # App initialization and configuration
+│   ├── api/
+│   │   └── v1/              # API endpoints 
+│   │       ├── amenities.py
+│   │       ├── places.py
+│   │       ├── reviews.py
+│   │       └── users.py
+│   ├── models/              # Data models
+│   │   ├── amenity.py
+│   │   ├── base_model.py
+│   │   ├── place.py
+│   │   ├── review.py
+│   │   └── user.py
+│   ├── persistence/         # Data storage
+│   │   └── repository.py
+│   └── services/           # Business logic
+│       ├── facade.py
+│       └── test.py
+├── config.py               # Configuration settings
+├── run.py                 # Application entry point
+└── requirements.txt       # Project dependencies
 ```
 
-## 🚀 Installation
-Pour installer et configurer le projet :
+## 🚀 Installation & Setup
+
+1. Create and activate virtual environment:
 ```bash
-# Créer un environnement virtuel
 python3 -m venv env
+source env/bin/activate
+```
 
-# Activer l'environnement
-source env/bin/activate  # Linux/Mac
-# ou
-.\env\Scripts\activate  # Windows
-
-# Installer les dépendances
+2. Install dependencies:
+```bash
 pip install -r requirements.txt
 ```
 
-## 🧪 Running Tests
-Pour exécuter la suite de tests :
+3. Run the application:
 ```bash
-python -m unittest tests/test_models.py
+python3 run.py
 ```
 
-## 📊 Diagramme
-Voici la structure de la base de données et les relations entre les modèles :
-![Database Schema](img/Diagram.png)
+The API will be available at `http://127.0.0.1:5000`
 
-## 🔍 Conclusion
-Ce projet implémente une architecture robuste pour la gestion de locations de propriétés, avec un accent particulier sur la maintenabilité et l'extensibilité. La documentation ci-dessus devrait vous permettre de comprendre et d'utiliser efficacement chaque composant du système.
+## ⚙️ Configuration
 
+The application supports different environments through `config.py`:
 
+- Development (default): Debug mode enabled
+- Testing: For running tests
+- Production: For deployment
+
+To change environment:
+```bash
+export FLASK_ENV=development  # or testing/production
+```
+
+## 🧪 API Testing Documentation
+
+### Manual Test Cases
+
+| Endpoint | Method | Test Data | Expected | Status |
+|----------|--------|-----------|-----------|---------|
+| `/api/v1/users/` | POST | `{"first_name": "John", "last_name": "Doe", "email": "john@example.com"}` | 201 | ✅ |
+| `/api/v1/places/` | POST | `{"title": "Cozy Cabin", "price": 100, "latitude": 40.7128, "longitude": -74.0060}` | 201 | ✅ |
+| `/api/v1/reviews/` | POST | `{"text": "Great!", "rating": 5, "place_id": "uuid", "user_id": "uuid"}` | 201 | ✅ |
+| `/api/v1/amenities/` | POST | `{"name": "WiFi"}` | 201 | ✅ |
+
+### Running Tests
+```bash
+python3 -m unittest discover tests
+```
+
+### Example Test Cases
+
+#### User Creation Test
+```python
+def test_create_user(self):
+    response = self.client.post('/api/v1/users/', json={
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "email": "jane@example.com"
+    })
+    self.assertEqual(response.status_code, 201)
+```
+
+#### Place Creation Test
+```python
+def test_create_place(self):
+    response = self.client.post('/api/v1/places/', json={
+        "title": "Mountain View",
+        "price": 150.0,
+        "latitude": 37.7749,
+        "longitude": -122.4194
+    })
+    self.assertEqual(response.status_code, 201)
+```
+
+#### Review Creation Test
+```python
+def test_create_review(self):
+    response = self.client.post('/api/v1/reviews/', json={
+        "text": "Amazing place!",
+        "rating": 5,
+        "place_id": "place-uuid",
+        "user_id": "user-uuid"
+    })
+    self.assertEqual(response.status_code, 201)
+```
+
+## 🚀 API Endpoints
+
+### Users API
+- `POST /api/v1/users/`: Create new user
+- `GET /api/v1/users/`: List all users
+- `GET /api/v1/users/<id>`: Get specific user
+- `PUT /api/v1/users/<id>`: Update user
+
+### Places API
+- `POST /api/v1/places/`: Create new place
+- `GET /api/v1/places/`: List all places
+- `GET /api/v1/places/<id>`: Get specific place
+- `PUT /api/v1/places/<id>`: Update place
+
+### Reviews API
+- `POST /api/v1/reviews/`: Create new review
+- `GET /api/v1/reviews/`: List all reviews
+- `GET /api/v1/reviews/<id>`: Get specific review
+- `PUT /api/v1/reviews/<id>`: Update review
+
+### Amenities API
+- `POST /api/v1/amenities/`: Create new amenity
+- `GET /api/v1/amenities/`: List all amenities
+- `GET /api/v1/amenities/<id>`: Get specific amenity
+- `PUT /api/v1/amenities/<id>`: Update amenity
+
+## 📊 Response Formats
+
+### Success Response
+```json
+{
+    "id": "uuid",
+    "created_at": "timestamp",
+    "updated_at": "timestamp",
+    ...resource specific fields...
+}
+```
+
+### Error Response
+```json
+{
+    "error": "Error message"
+}
+```
+
+## 🔑 Model Validation Rules
+
+### User Model
+- First name and last name cannot be empty
+- Valid email format required
+
+### Place Model
+- Title cannot be empty
+- Price must be positive
+- Latitude must be between -90 and 90
+- Longitude must be between -180 and 180
+
+### Review Model
+- Text cannot be empty
+- Rating must be between 1 and 5
+- Valid user_id and place_id required
+
+### Amenity Model
+- Name cannot be empty
+- Name must be between 1 and 50 characters
