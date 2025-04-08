@@ -17,8 +17,8 @@ class User(BaseModel):
     password = db.Column(db.String(128), nullable=False)
 
     # Relations
-    reviews = relationship("Review", back_populates="user")
-    places = relationship("Place", back_populates="owner")
+    reviews = relationship("Review", back_populates="user", lazy="dynamic")
+    places = relationship("Place", back_populates="owner", lazy="dynamic")
 
     def __init__(self, first_name, last_name, email, password, is_admin=False, **kwargs):
         """Initialize a new User instance."""
@@ -49,6 +49,8 @@ class User(BaseModel):
     @staticmethod
     def validate_email(email):
         """Validate the email format."""
+        if not email:
+            raise ValueError("Email cannot be empty")
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             raise ValueError("Invalid email format")
 
@@ -87,5 +89,38 @@ class User(BaseModel):
 
     @classmethod
     def check_email_uniqueness(cls, email):
-        """Vérifie si l'email existe déjà"""
+        """Check if an email is unique."""
         return cls.query.filter_by(email=email).first() is None
+
+    @classmethod
+    def create_user(cls, first_name, last_name, email, password, is_admin=False):
+        """
+        Create a new user and handle potential errors.
+        
+        Args:
+            first_name (str): First name of the user.
+            last_name (str): Last name of the user.
+            email (str): Email of the user.
+            password (str): Plain-text password of the user.
+            is_admin (bool): Whether the user is an admin. Defaults to False.
+        
+        Returns:
+            User: The created user instance or None if an error occurred.
+        
+        Raises:
+            IntegrityError: If the email already exists in the database.
+        """
+        try:
+            user = cls(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                password=password,
+                is_admin=is_admin,
+            )
+            db.session.add(user)
+            db.session.commit()
+            return user
+        except IntegrityError:
+            db.session.rollback()
+            raise ValueError(f"Email '{email}' already exists.")
