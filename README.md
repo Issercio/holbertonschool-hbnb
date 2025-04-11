@@ -27,7 +27,7 @@ The application follows a three-layered architecture:
 
 
 ## 📁 Directory Structure
-
+```
 .
 ├── app/ # Main application package
 │ ├── init.py # App initialization
@@ -62,7 +62,7 @@ The application follows a three-layered architecture:
 ├── ER_diag.md # Entity-relationship diagram documentation
 ├── requirements.txt # Project dependencies list
 └── setup.sql # Database setup script
-
+```
 ---
 
 ## 🚀 Installation and Setup
