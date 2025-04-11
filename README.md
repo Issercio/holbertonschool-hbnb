@@ -25,7 +25,7 @@ The application follows a three-layered architecture:
 
 ---
 
-## 📁 Directory Structure
+📁 Directory Structure
 
 .
 ├── app/ # Main application package
@@ -33,12 +33,12 @@ The application follows a three-layered architecture:
 │ ├── extensions.py # Flask extensions
 │ ├── api/ # API endpoints
 │ │ ├── v1/ # API version 1
-│ │ ├── amenities.py # Amenities endpoints
-│ │ ├── auth.py # Authentication endpoints
-│ │ ├── places.py # Places endpoints
-│ │ ├── protector.py # JWT protection middleware
-│ │ ├── reviews.py # Reviews endpoints
-│ │ └── users.py # Users endpoints
+│ │ │ ├── amenities.py # Amenities endpoints
+│ │ │ ├── auth.py # Authentication endpoints
+│ │ │ ├── places.py # Places endpoints
+│ │ │ ├── protector.py # JWT protection middleware
+│ │ │ ├── reviews.py # Reviews endpoints
+│ │ │ └── users.py # Users endpoints
 │ ├── models/ # Data models
 │ │ ├── amenity.py # Amenity model
 │ │ ├── base_model.py # Base model with common functionality
