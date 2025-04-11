@@ -1,352 +1,243 @@
-# HBnB - Holberton Bed and Breakfast API
+# 🏨 HBNB - Holberton AirBnB Clone
 
-## 📋 Overview
-HBnB (Holberton Bed and Breakfast) is a platform for property owners to list their accommodations and for travelers to book and review these places. This implementation uses a Flask backend with SQLAlchemy for database persistence, following clean architecture principles with repository pattern.
+## 📋 Project Overview
+HBNB is a comprehensive AirBnB clone application built using Python and Flask. This project implements a RESTful API backend with a web frontend that allows users to register, manage properties, leave reviews, and associate amenities with places.
 
-## 🏗️ Project Structure
-```
-.
-├── README.md
-├── app/
-│   ├── __init__.py                # App initialization and configuration
-│   ├── api/
-│   │   ├── __init__.py
-│   │   └── v1/                    # API endpoints
-│   │       ├── __init__.py
-│   │       ├── amenities.py
-│   │       ├── auth.py
-│   │       ├── places.py
-│   │       ├── reviews.py
-│   │       └── users.py
-│   ├── extensions.py              # Flask extensions
-│   ├── models/                    # Data models
-│   │   ├── __init__.py
-│   │   ├── amenity.py
-│   │   ├── association_tables.py
-│   │   ├── base_model.py
-│   │   ├── place.py
-│   │   ├── review.py
-│   │   └── user.py
-│   ├── persistence/               # Data storage
-│   │   ├── __init__.py
-│   │   ├── amenity_repository.py
-│   │   ├── place_repository.py
-│   │   ├── repository.py
-│   │   ├── review_repository.py
-│   │   ├── sqlalchemy_repository.py
-│   │   └── user_repository.py
-│   └── services/                  # Business logic
-│       ├── __init__.py
-│       ├── facade.py
-│       └── test.py
-├── config.py                      # Configuration settings
-├── img/                           # Images and diagrams
-│   └── Diagram.png
-├── init_db.py                     # Database initialization script
-├── instance/                      # Instance data
-│   └── development.db
-├── migrations/                    # Database migrations
-│   ├── README
-│   ├── alembic.ini
-│   ├── env.py
-│   ├── script.py.mako
-│   └── versions/
-│       └── 19dca831a264_initial_migration.py
-├── requirements.txt               # Project dependencies
-├── run.py                         # Application entry point
-├── sql/                           # SQL scripts
-│   ├── create_tables.sql
-│   ├── insert_initial_data.sql
-│   ├── test_queries.sql
-│   └── verify_db.sql
-└── tests/                         # Tests
-    ├── report_HBNB_API.md
-    ├── test_API.sh
-    ├── test_amenities.py
-    ├── test_curl_commands.sh
-    ├── test_facade.py
-    ├── test_places.py
-    ├── test_reviews.py
-    └── test_users.py
-```
+---
+
+## 🏗️ Architecture
+The application follows a three-layered architecture:
+
+- **🖥️ Presentation Layer**: API endpoints and web interface  
+- **🧠 Business Logic Layer**: Core models and business rules  
+- **💾 Persistence Layer**: Database interactions and storage  
+
+---
 
 ## ✨ Features
-- User authentication with JWT tokens
-- User registration with secure password hashing
-- Role-based access control (regular users and administrators)
-- Property listing management
-- Review system for properties
-- Database persistence with SQLAlchemy
 
-## 🏛️ Architecture
-The application follows a clean architecture approach with distinct layers:
-- **Models Layer**: Business entities (User, Place, Review, Amenity)
-- **Repository Layer**: Data persistence abstraction
-- **Service Layer**: Business logic facade
-- **API Layer**: RESTful endpoints
+- 👤 User registration and authentication with JWT  
+- 🏠 Property (place) listing and management  
+- ⭐ Review system for properties  
+- 🛋️ Amenity management and association with places  
+- 👑 Admin functionality for property management  
+- 📱 Responsive web interface  
 
-### Repository Pattern
-- Implements data persistence abstraction
-- Uses SQLAlchemy for database persistence
-- Common interface ensures consistency between implementations
+---
+
+
+## 📁 Directory Structure
+```
+.
+├── app/ # Main application package
+│ ├── init.py # App initialization
+│ ├── extensions.py # Flask extensions
+│ ├── api/ # API endpoints
+│ │ ├── v1/ # API version 1
+│ │ │ ├── amenities.py # Amenities endpoints
+│ │ │ ├── auth.py # Authentication endpoints
+│ │ │ ├── places.py # Places endpoints
+│ │ │ ├── protector.py # JWT protection middleware
+│ │ │ ├── reviews.py # Reviews endpoints
+│ │ │ └── users.py # Users endpoints
+│ ├── models/ # Data models
+│ │ ├── amenity.py # Amenity model
+│ │ ├── base_model.py # Base model with common functionality
+│ │ ├── place.py # Place model
+│ │ ├── review.py # Review model
+│ │ └── user.py # User model
+│ ├── persistence/ # Data storage layer
+│ │ ├── amenity_repository.py # Amenity storage operations
+│ │ ├── place_repository.py # Place storage operations
+│ │ ├── repository.py # Base repository interface
+│ │ ├── review_repository.py # Review storage operations
+│ │ └── user_repository.py # User storage operations
+│ └── services/ # Business logic services
+│ └── facade.py # Facade pattern implementation
+├── config.py # Application configuration
+├── run.py # Application entry point
+├── static/ # Static assets (CSS, JS, images)
+├── templates/ # HTML templates for the web interface
+├── tests/ # Test suite for the application
+├── ER_diag.md # Entity-relationship diagram documentation
+├── requirements.txt # Project dependencies list
+└── setup.sql # Database setup script
+```
+---
 
 ## 🚀 Installation and Setup
 
-### Prerequisites
-- Python 3.8+
-- pip
+### 📋 Prerequisites
 
-### Installation
-1. Clone the repository
-```bash
-git clone <repository-url>
-cd hbnb
-```
+- 🐍 Python 3.10+  
+- 🔄 Virtual environment (recommended)  
+- 🗄️ SQLite (for development) or MySQL (for production)  
 
-2. Create and activate a virtual environment
-```bash
-python3 -m venv env
-source env/bin/activate  # On Windows: env\Scripts\activate
-```
+### 📝 Setup Steps
 
-3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
+1. Clone the repository:
+    ```
+    git clone <repository-url>
+    cd hbnb
+    ```
 
-### Configuration
-The application uses different configuration profiles:
-- Development (default)
-- Production
-- Testing
+2. Create and activate a virtual environment:
+    ```
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
 
-Configuration is managed through the `config.py` file with options for:
-- Secret key for JWT tokens
-- Database URI
-- Debug mode
-- SQLAlchemy settings
+3. Install dependencies:
+    ```
+    pip install -r requirements.txt
+    ```
 
-To change environment:
-```bash
-export FLASK_ENV=development  # or testing/production
-```
+4. Configure the database:
+    ```
+    python setup.sql  # For SQLite (development)
 
-### Database Initialization
-```bash
-python init_db.py
-```
-or
-```bash
-flask shell
->>> from app import db
->>> db.create_all()
-```
+    # For MySQL (production):
+    # Configure MySQL credentials in config.py and run:
+    mysql -u username -p < setup.sql
+    ```
 
-### Running the Application
-```bash
-python run.py
-```
+5. Run the application:
+    ```
+    python run.py
+    ```
 
-The API will be available at `http://127.0.0.1:5000`
+---
 
-## 📡 API Endpoints
+## 🌐 API Endpoints
 
-### Authentication
-- `POST /api/v1/auth/login`: Authenticate user and receive JWT token
+### 🔐 Authentication
 
-### Users
-- `POST /api/v1/users/`: Create a new user (admin only)
-- `GET /api/v1/users/`: List all users
-- `GET /api/v1/users/<user_id>`: Get user details
-- `PUT /api/v1/users/<user_id>`: Update user details (owner or admin only)
+- `POST /api/v1/auth/login` - User login  
+- `POST /api/v1/auth/register` - User registration  
 
-### Places
-- `POST /api/v1/places/`: Create a new place
-- `GET /api/v1/places/`: List all places
-- `GET /api/v1/places/<id>`: Get specific place details
-- `PUT /api/v1/places/<id>`: Update place (owner or admin only)
+### 👤 Users
 
-### Reviews
-- `POST /api/v1/reviews/`: Create a new review (authenticated users)
-- `GET /api/v1/reviews/`: List all reviews
-- `GET /api/v1/reviews/<id>`: Get specific review details
-- `PUT /api/v1/reviews/<id>`: Update review (owner or admin only)
-- `DELETE /api/v1/reviews/<id>`: Delete review (owner or admin only)
+- `GET /api/v1/users` - List all users  
+- `GET /api/v1/users/<id>` - Get user details  
+- `PUT /api/v1/users/<id>` - Update user information  
 
-### Amenities
-- `POST /api/v1/amenities/`: Add a new amenity (admin only)
-- `GET /api/v1/amenities/`: List all amenities
-- `GET /api/v1/amenities/<id>`: Get specific amenity details
-- `PUT /api/v1/amenities/<id>`: Update amenity (admin only)
+### 🏠 Places
 
-## 📊 Response Formats
+- `GET /api/v1/places` - List all places  
+- `GET /api/v1/places/<id>` - Get place details  
+- `POST /api/v1/places` - Create a new place  
+- `PUT /api/v1/places/<id>` - Update place information  
 
-### Success Response
-```json
-{
-    "id": "uuid",
-    "created_at": "timestamp",
-    "updated_at": "timestamp",
-    ...resource specific fields...
-}
-```
+### ⭐ Reviews
 
-### Error Response
-```json
-{
-    "error": "Error message"
-}
-```
+- `GET /api/v1/places/<place_id>/reviews` - List reviews for a place  
+- `POST /api/v1/places/<place_id>/reviews` - Add a review to a place  
+- `PUT /api/v1/reviews/<id>` - Update a review  
+- `DELETE /api/v1/reviews/<id>` - Delete a review  
 
-## 🔒 Security Features
-- Password hashing with bcrypt
-- JWT token authentication
-- Role-based access control
-- Ownership validation for resource modification
+### 🛋️ Amenities
 
-## 🗃️ Data Models and Relationships
+- `GET /api/v1/amenities` - List all amenities  
+- `GET /api/v1/amenities/<id>` - Get amenity details  
+- `POST /api/v1/amenities` - Create a new amenity  
+- `PUT /api/v1/amenities/<id>` - Update amenity information  
 
-### User
-- Attributes: `id`, `first_name`, `last_name`, `email`, `password`, `is_admin`
-- Relationships: 
-  - A user can create multiple places (one-to-many)
-  - A user can write multiple reviews (one-to-many)
+---
 
-### Place
-- Attributes: `id`, `title`, `description`, `price`, `latitude`, `longitude`, `owner_id`
-- Relationships:
-  - A place belongs to a single user (many-to-one)
-  - A place can have multiple reviews (one-to-many)
-  - A place can have multiple amenities (many-to-many)
+## 🔒 Authentication Details
 
-### Review
-- Attributes: `id`, `text`, `rating`, `user_id`, `place_id`
-- Relationships:
-  - A review is written by a single user (many-to-one)
-  - A review is associated with a single place (many-to-one)
+The application uses JWT (JSON Web Tokens) for authentication. Protected endpoints require a valid token in the Authorization header:
 
-### Amenity
-- Attributes: `id`, `name`
-- Relationships:
-  - An amenity can be associated with multiple places (many-to-many)
+Authorization: Bearer <your-jwt-token>
 
-## 📝 Model Validation Rules
+text
 
-### User Model
-- First name and last name cannot be empty
-- Valid email format required
+To obtain a token, use the login endpoint with valid credentials.
 
-### Place Model
-- Title cannot be empty
-- Price must be positive
-- Latitude must be between -90 and 90
-- Longitude must be between -180 and 180
+---
 
-### Review Model
-- Text cannot be empty
-- Rating must be between 1 and 5
-- Valid user_id and place_id required
+## 🧪 Testing
 
-### Amenity Model
-- Name cannot be empty
-- Name must be between 1 and 50 characters
+Run the test suite with pytest:
 
-## 🧪 Tests
+pytest
 
-### Running Tests
-```bash
-python -m unittest discover tests
-```
+text
 
-or
+To run specific tests:
 
-```bash
-bash tests/test_API.sh
-```
+pytest tests/test_user.py # Run user tests only.
+pytest tests/test_place.py # Run place tests only.
 
-### Tests with curl
-```bash
-bash tests/test_curl_commands.sh
-```
+text
 
-### Test Examples
+---
 
-#### User Creation Test
-```python
-def test_create_user(self):
-    response = self.client.post('/api/v1/users/', json={
-        "first_name": "Jane",
-        "last_name": "Doe",
-        "email": "jane@example.com"
-    })
-    self.assertEqual(response.status_code, 201)
-```
+## 🗄️ Database Schema
 
-#### Place Creation Test
-```python
-def test_create_place(self):
-    response = self.client.post('/api/v1/places/', json={
-        "title": "Mountain View",
-        "price": 150.0,
-        "latitude": 37.7749,
-        "longitude": -122.4194
-    })
-    self.assertEqual(response.status_code, 201)
-```
+The application uses SQLAlchemy ORM with the following main entities:
 
-## 📚 Documentation
+- 👤 **User**: Stores user information and credentials  
+- 🏠 **Place**: Represents properties with location and details  
+- ⭐ **Review**: Contains reviews for places  
+- 🛋️ **Amenity**: Represents features available at places  
 
-### API Documentation
-API documentation is automatically generated using Swagger/OpenAPI.
-Access `http://127.0.0.1:5000/api/docs` to view the interactive documentation.
+See `ER_diag.md` for a detailed entity-relationship diagram.
 
-### Code Documentation
-The code is documented with docstrings conforming to PEP 257 standards.
+---
 
-## 🔄 SQL Scripts
+## 🖥️ Web Interface
 
-### Available Scripts
-The following SQL scripts are available in the `sql/` directory:
+The application includes a simple web interface accessible at the root URL:
 
-- `create_tables.sql`: Creates all tables with their constraints
-- `insert_initial_data.sql`: Inserts the initial data
-- `test_queries.sql`: Test queries to verify the database
-- `verify_db.sql`: Database verifications
+| URL                | Description                  |
+|--------------------|------------------------------|
+| `/`                | Homepage with places listing |
+| `/login`           | User login page             |
+| `/place/<id>`      | Place details page          |
+| `/add_review/<id>` | Add review form             |
 
-To execute the SQL scripts:
-```bash
-psql -U <user> -d <database> -f sql/create_tables.sql
-psql -U <user> -d <database> -f sql/insert_initial_data.sql
-```
+---
 
-## 🤝 Contribution
-1. Create a branch for your feature (`git checkout -b feature/my-feature`)
-2. Commit your changes (`git commit -m 'Add my feature'`)
-3. Push to the branch (`git push origin feature/my-feature`)
-4. Open a Pull Request
+## 📈 Project Evolution
 
-### Coding Standards
-- PEP 8 compliance for Python code style
-- Unit tests for all new features
-- Documentation of functions and classes with docstrings
+This project has evolved through multiple phases:
 
-## 🚢 Deployment
+1. **📝 Architecture design and documentation**  
+2. **🧠 Business logic and API implementation**  
+3. **🔐 Authentication, authorization, and database integration**  
+4. **🎨 Web interface development**
 
-### Deployment with Docker
-```bash
-docker build -t hbnb .
-docker run -p 5000:5000 hbnb
-```
+---
 
-### Production Deployment
-For production deployment, configure environment variables:
-```bash
-export FLASK_ENV=production
-export DATABASE_URL=<your-db-url>
-export SECRET_KEY=<your-secret-key>
-```
+## 🤝 Contributing
 
-Use a WSGI server such as Gunicorn:
-```bash
-gunicorn -w 4 -b 0.0.0.0:5000 'app:create_app()'
-```
+1. Fork the repository.  
+2. Create a feature branch:
+    ```
+    git checkout -b feature/amazing-feature
+    ```
+3. Commit your changes:
+    ```
+    git commit -m 'Add amazing feature'
+    ```
+4. Push to the branch:
+    ```
+    git push origin feature/amazing-feature 
+    ```
+5. Open a Pull Request.
+
+---
+
+## 📜 License
+
+This project is for educational purposes as part of the Holberton School curriculum.
+
+---
+
+## 🙏 Acknowledgements
+
+Special thanks to:
+
+- 🏫 Holberton School for the project structure and requirements.  
+- 🌐 Flask and SQLAlchemy communities for their excellent documentation.
