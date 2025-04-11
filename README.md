@@ -62,8 +62,6 @@ The application follows a three-layered architecture:
 ├── requirements.txt # Project dependencies list
 └── setup.sql # Database setup script
 
-text
-
 ---
 
 ## 🚀 Installation and Setup
