@@ -25,7 +25,8 @@ The application follows a three-layered architecture:
 
 ---
 
-📁 Directory Structure
+
+## 📁 Directory Structure
 
 .
 ├── app/ # Main application package
