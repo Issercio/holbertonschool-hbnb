@@ -1,180 +1,102 @@
-# HBNB API Documentation
+HBNB Project Part 2: Implementation of Business Logic and API Endpoints 🚀
+Overview 📝
+This part of the HBNB Project focuses on implementing the core functionality of the application based on previously designed architecture. The main goal is to build the Presentation and Business Logic layers using Python and Flask.
+Objectives 🎯
+By the end of this project, you should be able to:
 
-## 📁 Project Structure
-```bash
-hbnb-2/
-├── app/
-│   ├── __init__.py           # App initialization and configuration
-│   ├── api/
-│   │   └── v1/              # API endpoints 
-│   │       ├── amenities.py
-│   │       ├── places.py
-│   │       ├── reviews.py
-│   │       └── users.py
-│   ├── models/              # Data models
-│   │   ├── amenity.py
-│   │   ├── base_model.py
-│   │   ├── place.py
-│   │   ├── review.py
-│   │   └── user.py
-│   ├── persistence/         # Data storage
-│   │   └── repository.py
-│   └── services/           # Business logic
-│       ├── facade.py
-│       └── test.py
-├── config.py               # Configuration settings
-├── run.py                 # Application entry point
-└── requirements.txt       # Project dependencies
-```
+Set Up Project Structure 📂
 
-## 🚀 Installation & Setup
+Organize the project into a modular architecture
+Create necessary packages for Presentation and Business Logic layers
 
-1. Create and activate virtual environment:
-```bash
-python3 -m venv env
-source env/bin/activate
-```
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+Implement Business Logic Layer ⚙️
 
-3. Run the application:
-```bash
-python3 run.py
-```
+Develop core classes (User, Place, Review, Amenity)
+Implement relationships between entities
+Apply the facade pattern for layer communication
 
-The API will be available at `http://127.0.0.1:5000`
 
-## ⚙️ Configuration
+Build RESTful API Endpoints 🌐
 
-The application supports different environments through `config.py`:
+Create CRUD operations for all entities
+Use flask-restx for API definition and documentation
+Implement data serialization for related objects
 
-- Development (default): Debug mode enabled
-- Testing: For running tests
-- Production: For deployment
 
-To change environment:
-```bash
-export FLASK_ENV=development  # or testing/production
-```
+Test and Validate the API ✅
 
-## 🧪 API Testing Documentation
+Ensure correct endpoint functionality
+Handle edge cases appropriately
+Test using tools like Postman or cURL
 
-### Manual Test Cases
 
-| Endpoint | Method | Test Data | Expected | Status |
-|----------|--------|-----------|-----------|---------|
-| `/api/v1/users/` | POST | `{"first_name": "John", "last_name": "Doe", "email": "john@example.com"}` | 201 | ✅ |
-| `/api/v1/places/` | POST | `{"title": "Cozy Cabin", "price": 100, "latitude": 40.7128, "longitude": -74.0060}` | 201 | ✅ |
-| `/api/v1/reviews/` | POST | `{"text": "Great!", "rating": 5, "place_id": "uuid", "user_id": "uuid"}` | 201 | ✅ |
-| `/api/v1/amenities/` | POST | `{"name": "WiFi"}` | 201 | ✅ |
 
-### Running Tests
-```bash
-python3 -m unittest discover tests
-```
+Tasks 📋
+Task 0: Project Setup and Package Initialization ✨
 
-### Example Test Cases
+Set up initial project structure
+Organize code for Presentation, Business Logic, and Persistence layers
+Implement in-memory repository for object storage and validation
+Prepare the project to use the Facade pattern
 
-#### User Creation Test
-```python
-def test_create_user(self):
-    response = self.client.post('/api/v1/users/', json={
-        "first_name": "Jane",
-        "last_name": "Doe",
-        "email": "jane@example.com"
-    })
-    self.assertEqual(response.status_code, 201)
-```
+Task 1: Core Business Logic Classes 🏗️
 
-#### Place Creation Test
-```python
-def test_create_place(self):
-    response = self.client.post('/api/v1/places/', json={
-        "title": "Mountain View",
-        "price": 150.0,
-        "latitude": 37.7749,
-        "longitude": -122.4194
-    })
-    self.assertEqual(response.status_code, 201)
-```
+Implement core entities (User, Place, Review, Amenity)
+Define necessary attributes, methods, and relationships
+Handle attribute validation and updates
 
-#### Review Creation Test
-```python
-def test_create_review(self):
-    response = self.client.post('/api/v1/reviews/', json={
-        "text": "Amazing place!",
-        "rating": 5,
-        "place_id": "place-uuid",
-        "user_id": "user-uuid"
-    })
-    self.assertEqual(response.status_code, 201)
-```
+Task 2: User Endpoints 👤
 
-## 🚀 API Endpoints
+Implement API endpoints for user management
+Set up POST, GET, and PUT operations
+Integrate Presentation and Business Logic layers
+Ensure password is not included in responses
 
-### Users API
-- `POST /api/v1/users/`: Create new user
-- `GET /api/v1/users/`: List all users
-- `GET /api/v1/users/<id>`: Get specific user
-- `PUT /api/v1/users/<id>`: Update user
+Task 3: Amenity Endpoints 🛋️
 
-### Places API
-- `POST /api/v1/places/`: Create new place
-- `GET /api/v1/places/`: List all places
-- `GET /api/v1/places/<id>`: Get specific place
-- `PUT /api/v1/places/<id>`: Update place
+Set up CRUD operations (except DELETE) for amenities
+Implement necessary business logic
+Integrate layers through the Facade pattern
 
-### Reviews API
-- `POST /api/v1/reviews/`: Create new review
-- `GET /api/v1/reviews/`: List all reviews
-- `GET /api/v1/reviews/<id>`: Get specific review
-- `PUT /api/v1/reviews/<id>`: Update review
+Task 4: Place Endpoints 🏠
 
-### Amenities API
-- `POST /api/v1/amenities/`: Create new amenity
-- `GET /api/v1/amenities/`: List all amenities
-- `GET /api/v1/amenities/<id>`: Get specific amenity
-- `PUT /api/v1/amenities/<id>`: Update amenity
+Implement place management endpoints
+Handle relationships with other entities (User, Amenity)
+Implement validation for specific attributes (price, latitude, longitude)
+Return related data with Place information
 
-## 📊 Response Formats
+Task 5: Review Endpoints ⭐
 
-### Success Response
-```json
-{
-    "id": "uuid",
-    "created_at": "timestamp",
-    "updated_at": "timestamp",
-    ...resource specific fields...
-}
-```
+Set up CRUD operations (including DELETE) for reviews
+Implement validation for review attributes
+Associate reviews with users and places
+Update Place model to include review collections
 
-### Error Response
-```json
-{
-    "error": "Error message"
-}
-```
+Task 6: Testing and Validation 🧪
 
-## 🔑 Model Validation Rules
+Implement basic validation checks
+Perform black-box testing using cURL
+Generate and verify Swagger documentation
+Create detailed testing reports
 
-### User Model
-- First name and last name cannot be empty
-- Valid email format required
+Resources 📚
 
-### Place Model
-- Title cannot be empty
-- Price must be positive
-- Latitude must be between -90 and 90
-- Longitude must be between -180 and 180
+Flask Documentation: https://flask.palletsprojects.com/en/stable/
+Flask-RESTx Documentation: https://flask-restx.readthedocs.io/en/latest/
+Python Project Structure Best Practices: https://docs.python-guide.org/writing/structure/
+Facade Design Pattern: https://refactoring.guru/design-patterns/facade/python/example
+RESTful API Design Best Practices: https://restfulapi.net/
 
-### Review Model
-- Text cannot be empty
-- Rating must be between 1 and 5
-- Valid user_id and place_id required
+Important Notes 📌
 
-### Amenity Model
-- Name cannot be empty
-- Name must be between 1 and 50 characters
+Authentication (JWT) and role-based access control will be implemented in the next part
+The persistence layer uses in-memory storage for now; database implementation comes in Part 3
+DELETE operation is only implemented for Reviews in this part of the project
+
+Repository Information 📁
+
+GitHub Repository: holbertonschool-hbnb
+Directory: part2
+
+Happy coding! 💻
