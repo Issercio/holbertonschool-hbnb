@@ -1,183 +1,143 @@
 🏨 HBNB - Holberton AirBnB Clone
-📋 Project Overview
-HBNB is a comprehensive AirBnB clone application built using Python and Flask. This project implements a RESTful API backend with web frontend that allows users to register, manage properties, leave reviews, and associate amenities with places.
+![Project Logo](https://via.placeholdere complet d'AirBnB construit avec Python et Flask.*
+
+📋 Aperçu du projet
+HBNB est une application robuste qui permet aux utilisateurs de :
+
+S'inscrire et gérer leurs propriétés.
+
+Laisser des avis.
+
+Associer des commodités à des lieux.
+
 🏗️ Architecture
-The application follows a three-layered architecture:
+Le projet suit une architecture en trois couches :
 
-🖥️ Presentation Layer: API endpoints and web interface
-🧠 Business Logic Layer: Core models and business rules
-💾 Persistence Layer: Database interactions and storage
+🖥️ Présentation : Interface API et web.
 
-✨ Features
+🧠 Logique métier : Modèles principaux et règles métier.
 
-👤 User registration and authentication with JWT
-🏠 Property (place) listing and management
-⭐ Review system for properties
-🛋️ Amenity management and association with places
-👑 Admin functionality for property management
-📱 Responsive web interface
+💾 Persistance : Interactions avec la base de données.
 
-📁 Directory Structure
+✨ Fonctionnalités
+👤 Inscription et authentification des utilisateurs via JWT.
+
+🏠 Gestion des propriétés (ajout, modification, suppression).
+
+⭐ Système d'avis pour les propriétés.
+
+🛋️ Gestion des commodités associées aux lieux.
+
+👑 Fonctionnalités administratives.
+
+📱 Interface web responsive.
+
+📁 Structure du répertoire
+text
 .
-├── app/                           # Main application package
-│   ├── __init__.py                # App initialization
-│   ├── extensions.py              # Flask extensions
-│   ├── api/                       # API endpoints
-│   │   ├── v1/                    # API version 1
-│   │   │   ├── amenities.py       # Amenities endpoints
-│   │   │   ├── auth.py            # Authentication endpoints
-│   │   │   ├── places.py          # Places endpoints
-│   │   │   ├── protector.py       # JWT protection middleware
-│   │   │   ├── reviews.py         # Reviews endpoints
-│   │   │   └── users.py           # Users endpoints
-│   ├── models/                    # Data models
-│   │   ├── amenity.py             # Amenity model
-│   │   ├── base_model.py          # Base model with common functionality
-│   │   ├── place.py               # Place model
-│   │   ├── review.py              # Review model
-│   │   └── user.py                # User model
-│   ├── persistence/               # Data storage layer
-│   │   ├── amenity_repository.py  # Amenity storage operations
-│   │   ├── place_repository.py    # Place storage operations
-│   │   ├── repository.py          # Base repository interface
-│   │   ├── review_repository.py   # Review storage operations
-│   │   └── user_repository.py     # User storage operations
-│   └── services/                  # Business logic services
-│       └── facade.py              # Facade pattern implementation
-├── config.py                      # Application configuration
-├── run.py                         # Application entry point
-├── static/                        # Static assets
-│   ├── css/                       # CSS styles
-│   ├── images/                    # Image assets
-│   └── js/                        # JavaScript files
-├── templates/                     # HTML templates
-│   ├── add_review.html            # Review form template
-│   ├── index.html                 # Home page template
-│   ├── login.html                 # Login page template
-│   └── place.html                 # Place details template
-├── tests/                         # Test suite
-│   ├── test_amenity.py            # Amenity tests
-│   ├── test_place.py              # Place tests
-│   ├── test_post_review_with_jwt.py # JWT-protected review tests
-│   ├── test_review.py             # Review tests
-│   └── test_user.py               # User tests
-├── ER_diag.md                     # Entity-relationship diagram
-├── requirements.txt               # Project dependencies
-└── setup.sql                      # Database setup script
-🚀 Installation and Setup
-📋 Prerequisites
-
+├── app/
+│   ├── api/
+│   ├── models/
+│   ├── persistence/
+│   ├── services/
+├── static/
+├── templates/
+├── tests/
+├── config.py
+├── run.py
+└── setup.sql
+🚀 Installation et configuration
+Prérequis
 🐍 Python 3.10+
-🔄 Virtual environment (recommended)
-🗄️ SQLite (for development) or MySQL (for production)
 
-📝 Setup Steps
+🔄 Environnement virtuel (recommandé)
 
-Clone the repository
+🗄️ SQLite ou MySQL
 
-bashgit clone <repository-url>
+Étapes
+Clonez le dépôt :
+
+bash
+git clone https://github.com/username/hbnb.git
 cd hbnb
+Créez un environnement virtuel :
 
-Create and activate virtual environment
+bash
+python -m venv venv
+source venv/bin/activate  # Windows : venv\Scripts\activate
+Installez les dépendances :
 
-bashpython -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+bash
+pip install -r requirements.txt
+Configurez la base de données :
 
-Install dependencies
+bash
+python setup.sql  # SQLite
+Lancez l'application :
 
-bashpip install -r requirements.txt
+bash
+python run.py
+🌐 Endpoints API
+🔐 Authentification
+POST /api/v1/auth/login : Connexion utilisateur.
 
-Configure the database
+POST /api/v1/auth/register : Inscription utilisateur.
 
-bash# For development (SQLite)
-python setup.sql
+👤 Utilisateurs
+GET /api/v1/users : Liste des utilisateurs.
 
-# For production (MySQL)
-# Configure MySQL credentials in config.py and run:
-# mysql -u username -p < setup.sql
+🏠 Propriétés
+GET /api/v1/places : Liste des propriétés.
 
-Run the application
+⭐ Avis
+POST /api/v1/places/<place_id>/reviews : Ajouter un avis.
 
-bashpython run.py
-🌐 API Endpoints
-🔐 Authentication
+🛋️ Commodités
+GET /api/v1/amenities : Liste des commodités.
 
-POST /api/v1/auth/login - User login
-POST /api/v1/auth/register - User registration
+🖥️ Interface web
+Accédez à l'application via ces pages :
 
-👤 Users
+/ : Page d'accueil.
 
-GET /api/v1/users - List all users
-GET /api/v1/users/<id> - Get user details
-PUT /api/v1/users/<id> - Update user information
+/login : Connexion utilisateur.
 
-🏠 Places
+/place/<place_id> : Détails d'une propriété.
 
-GET /api/v1/places - List all places
-GET /api/v1/places/<id> - Get place details
-POST /api/v1/places - Create a new place
-PUT /api/v1/places/<id> - Update place information
+📈 Évolution du projet
+Le projet a évolué en plusieurs phases :
 
-⭐ Reviews
+📝 Design de l'architecture.
 
-GET /api/v1/places/<place_id>/reviews - List reviews for a place
-POST /api/v1/places/<place_id>/reviews - Add a review to a place
-PUT /api/v1/reviews/<id> - Update a review
-DELETE /api/v1/reviews/<id> - Delete a review
+🧠 Implémentation de la logique métier et API.
 
-🛋️ Amenities
+🔐 Intégration de l'authentification et base de données.
 
-GET /api/v1/amenities - List all amenities
-GET /api/v1/amenities/<id> - Get amenity details
-POST /api/v1/amenities - Create a new amenity
-PUT /api/v1/amenities/<id> - Update amenity information
+🎨 Développement de l'interface web.
 
-🔒 Authentication
-The application uses JWT (JSON Web Tokens) for authentication. Protected endpoints require a valid token in the Authorization header:
-Authorization: Bearer <your-jwt-token>
-To obtain a token, use the login endpoint with valid credentials.
-🧪 Testing
-Run the test suite with pytest:
-bashpytest
-To run specific tests:
-bashpytest tests/test_user.py
-pytest tests/test_place.py
-🗄️ Database Schema
-The application uses SQLAlchemy ORM with the following main entities:
+🤝 Contribuer
+Forkez le dépôt.
 
-👤 User - Stores user information and credentials
-🏠 Place - Represents properties with location and details
-⭐ Review - Contains reviews for places
-🛋️ Amenity - Represents features available at places
+Créez une branche feature :
 
-See ER_diag.md for a detailed entity-relationship diagram.
-🖥️ Web Interface
-The application includes a simple web interface accessible at the root URL:
+bash
+git checkout -b feature/amazing-feature
+Commitez vos modifications :
 
-/ - Homepage with places listing
-/login - User login page
-/place/<id> - Place details page
-/add_review/<place_id> - Add review form
+bash
+git commit -m "Add amazing feature"
+Poussez votre branche :
 
-📈 Project Evolution
-This project has evolved through multiple phases:
+bash
+git push origin feature/amazing-feature
+Ouvrez une Pull Request.
 
-Part 1 - 📝 Architecture design and documentation
-Part 2 - 🧠 Business logic and API implementation
-Part 3 - 🔐 Authentication, authorization, and database integration
-Part 4 - 🎨 Web interface development
+📜 Licence
+Ce projet est réalisé dans le cadre du programme éducatif de Holberton School.
 
-🤝 Contributing
+🙏 Remerciements
+Merci à :
 
-Fork the repository
-Create a feature branch (git checkout -b feature/amazing-feature)
-Commit your changes (git commit -m 'Add amazing feature')
-Push to the branch (git push origin feature/amazing-feature)
-Open a Pull Request
+🏫 Holberton School pour la structure du projet.
 
-📜 License
-This project is for educational purposes as part of the Holberton School curriculum.
-🙏 Acknowledgements
-
-🏫 Holberton School for the project structure and requirements
-🌐 Flask and SQLAlchemy communities for the excellent documentation
+🌐 Les communautés Flask et SQLAlchemy pour leur documentation exceptionnelle.
