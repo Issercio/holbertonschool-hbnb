@@ -1,127 +1,243 @@
-# 🏠 HBnB Evolution Project 🏠
+# 🏨 HBNB - Holberton AirBnB Clone
 
 ## 📋 Project Overview
+HBNB is a comprehensive AirBnB clone application built using Python and Flask. This project implements a RESTful API backend with a web frontend that allows users to register, manage properties, leave reviews, and associate amenities with places.
 
-Welcome to the **HBnB Evolution** project! This project involves creating a comprehensive technical documentation for an AirBnB-like application. The documentation will serve as the foundation for the development of the application, helping to understand the overall architecture, business logic design, and system interactions.
+---
 
-## 🎯 Project Objective
+## 🏗️ Architecture
+The application follows a three-layered architecture:
 
-Create detailed technical documentation for HBnB Evolution - a simplified version of an AirBnB-like application that allows users to:
-- 👤 Register and manage user profiles
-- 🏘️ List and manage properties
-- ⭐ Leave reviews for places
-- 🛋️ Associate amenities with places
+- **🖥️ Presentation Layer**: API endpoints and web interface  
+- **🧠 Business Logic Layer**: Core models and business rules  
+- **💾 Persistence Layer**: Database interactions and storage  
 
-## 🧩 Application Components
+---
 
-### Entity Management
-1. **User Entity**
-   - Attributes: first name, last name, email, password, admin status
-   - Operations: register, update profile, delete
+## ✨ Features
 
-2. **Place Entity**
-   - Attributes: title, description, price, location (latitude/longitude)
-   - Relations: owner (user), amenities
-   - Operations: create, update, delete, list
+- 👤 User registration and authentication with JWT  
+- 🏠 Property (place) listing and management  
+- ⭐ Review system for properties  
+- 🛋️ Amenity management and association with places  
+- 👑 Admin functionality for property management  
+- 📱 Responsive web interface  
 
-3. **Review Entity**
-   - Attributes: rating, comment
-   - Relations: place, user
-   - Operations: create, update, delete, list by place
+---
 
-4. **Amenity Entity**
-   - Attributes: name, description
-   - Operations: create, update, delete, list
 
-### Architecture
-The application follows a **three-layered architecture**:
-- 🖥️ **Presentation Layer**: Services and API
-- 🧠 **Business Logic Layer**: Models and core logic
-- 💾 **Persistence Layer**: Database storage and retrieval
+## 📁 Directory Structure
+```
+.
+├── app/ # Main application package
+│ ├── init.py # App initialization
+│ ├── extensions.py # Flask extensions
+│ ├── api/ # API endpoints
+│ │ ├── v1/ # API version 1
+│ │ │ ├── amenities.py # Amenities endpoints
+│ │ │ ├── auth.py # Authentication endpoints
+│ │ │ ├── places.py # Places endpoints
+│ │ │ ├── protector.py # JWT protection middleware
+│ │ │ ├── reviews.py # Reviews endpoints
+│ │ │ └── users.py # Users endpoints
+│ ├── models/ # Data models
+│ │ ├── amenity.py # Amenity model
+│ │ ├── base_model.py # Base model with common functionality
+│ │ ├── place.py # Place model
+│ │ ├── review.py # Review model
+│ │ └── user.py # User model
+│ ├── persistence/ # Data storage layer
+│ │ ├── amenity_repository.py # Amenity storage operations
+│ │ ├── place_repository.py # Place storage operations
+│ │ ├── repository.py # Base repository interface
+│ │ ├── review_repository.py # Review storage operations
+│ │ └── user_repository.py # User storage operations
+│ └── services/ # Business logic services
+│ └── facade.py # Facade pattern implementation
+├── config.py # Application configuration
+├── run.py # Application entry point
+├── static/ # Static assets (CSS, JS, images)
+├── templates/ # HTML templates for the web interface
+├── tests/ # Test suite for the application
+├── ER_diag.md # Entity-relationship diagram documentation
+├── requirements.txt # Project dependencies list
+└── setup.sql # Database setup script
+```
+---
 
-## ✅ Project Tasks
+## 🚀 Installation and Setup
 
-### Task 0: High-Level Package Diagram ✨
-**Objective**: Create a package diagram illustrating the three-layer architecture and communication via facade pattern.
+### 📋 Prerequisites
 
-**Requirements**:
-- Show three layers (Presentation, Business Logic, Persistence)
-- Illustrate communication pathways between layers
-- Apply facade pattern
-- Include explanatory notes
+- 🐍 Python 3.10+  
+- 🔄 Virtual environment (recommended)  
+- 🗄️ SQLite (for development) or MySQL (for production)  
 
-### Task 1: Detailed Class Diagram for Business Logic Layer 📊
-**Objective**: Design a class diagram for the Business Logic layer focusing on key entities.
+### 📝 Setup Steps
 
-**Requirements**:
-- Include User, Place, Review, and Amenity entities
-- Define attributes, methods, and relationships
-- Include UUIDs and creation/update dates
-- Use proper UML notation
-- Include explanatory notes
+1. Clone the repository:
+    ```
+    git clone <repository-url>
+    cd hbnb
+    ```
 
-### Task 2: Sequence Diagrams for API Calls 🔄
-**Objective**: Develop sequence diagrams for API calls showing layer interactions.
+2. Create and activate a virtual environment:
+    ```
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
 
-**Requirements**:
-- Create diagrams for:
-  - User registration
-  - Place creation
-  - Review submission
-  - Fetching a list of places
-- Show step-by-step flow between layers
-- Include explanatory notes
+3. Install dependencies:
+    ```
+    pip install -r requirements.txt
+    ```
 
-### Task 3: Documentation Compilation 📚
-**Objective**: Compile all diagrams and notes into a comprehensive technical document.
+4. Configure the database:
+    ```
+    python setup.sql  # For SQLite (development)
 
-**Requirements**:
-- Include introduction to the project
-- Organize sections for:
-  - High-level architecture
-  - Business logic layer details
-  - API interaction flows
-- Add explanatory notes for each diagram
-- Ensure professional formatting and clarity
+    # For MySQL (production):
+    # Configure MySQL credentials in config.py and run:
+    mysql -u username -p < setup.sql
+    ```
 
-## 📝 Key Requirements
+5. Run the application:
+    ```
+    python run.py
+    ```
 
-- All entities must have unique IDs
-- Creation and update datetimes should be recorded for audit purposes
-- All diagrams must use UML notation
-- Documentation must clearly show interactions between layers
+---
 
-## 🛠️ Helpful Resources
+## 🌐 API Endpoints
 
-### UML Basics
-- [OOP - Introduction to UML](https://example.com/uml-intro)
+### 🔐 Authentication
 
-### Package Diagrams
-- [UML Package Diagram Overview](https://example.com/package-diagrams)
-- [UML Package Diagrams Guide](https://example.com/package-guide)
+- `POST /api/v1/auth/login` - User login  
+- `POST /api/v1/auth/register` - User registration  
 
-### Class Diagrams
-- [UML Class Diagram Tutorial](https://example.com/class-diagrams)
-- [How to Draw UML Class Diagrams](https://example.com/draw-class-diagrams)
+### 👤 Users
 
-### Sequence Diagrams
-- [UML Sequence Diagram Tutorial](https://example.com/sequence-diagrams)
-- [Understanding Sequence Diagrams](https://example.com/sequence-understanding)
+- `GET /api/v1/users` - List all users  
+- `GET /api/v1/users/<id>` - Get user details  
+- `PUT /api/v1/users/<id>` - Update user information  
 
-### Diagram Tools
-- [Mermaid.js Documentation](https://mermaid-js.github.io/mermaid/)
-- [draw.io](https://www.draw.io/)
+### 🏠 Places
 
-## 🏁 Expected Outcome
+- `GET /api/v1/places` - List all places  
+- `GET /api/v1/places/<id>` - Get place details  
+- `POST /api/v1/places` - Create a new place  
+- `PUT /api/v1/places/<id>` - Update place information  
 
-By the end of this project, you will have created a complete set of technical documentation that provides a clear blueprint for the HBnB Evolution application. This documentation will guide implementation and ensure a solid understanding of the application's design and architecture.
+### ⭐ Reviews
 
-## 🚀 Getting Started
+- `GET /api/v1/places/<place_id>/reviews` - List reviews for a place  
+- `POST /api/v1/places/<place_id>/reviews` - Add a review to a place  
+- `PUT /api/v1/reviews/<id>` - Update a review  
+- `DELETE /api/v1/reviews/<id>` - Delete a review  
 
-1. Review the architecture requirements and business rules
-2. Start with the high-level package diagram
-3. Progress to the detailed class diagram
-4. Create sequence diagrams for key API interactions
-5. Compile everything into a comprehensive document
+### 🛋️ Amenities
 
-Good luck! 🍀
+- `GET /api/v1/amenities` - List all amenities  
+- `GET /api/v1/amenities/<id>` - Get amenity details  
+- `POST /api/v1/amenities` - Create a new amenity  
+- `PUT /api/v1/amenities/<id>` - Update amenity information  
+
+---
+
+## 🔒 Authentication Details
+
+The application uses JWT (JSON Web Tokens) for authentication. Protected endpoints require a valid token in the Authorization header:
+
+Authorization: Bearer <your-jwt-token>
+
+text
+
+To obtain a token, use the login endpoint with valid credentials.
+
+---
+
+## 🧪 Testing
+
+Run the test suite with pytest:
+
+pytest
+
+text
+
+To run specific tests:
+
+pytest tests/test_user.py # Run user tests only.
+pytest tests/test_place.py # Run place tests only.
+
+text
+
+---
+
+## 🗄️ Database Schema
+
+The application uses SQLAlchemy ORM with the following main entities:
+
+- 👤 **User**: Stores user information and credentials  
+- 🏠 **Place**: Represents properties with location and details  
+- ⭐ **Review**: Contains reviews for places  
+- 🛋️ **Amenity**: Represents features available at places  
+
+See `ER_diag.md` for a detailed entity-relationship diagram.
+
+---
+
+## 🖥️ Web Interface
+
+The application includes a simple web interface accessible at the root URL:
+
+| URL                | Description                  |
+|--------------------|------------------------------|
+| `/`                | Homepage with places listing |
+| `/login`           | User login page             |
+| `/place/<id>`      | Place details page          |
+| `/add_review/<id>` | Add review form             |
+
+---
+
+## 📈 Project Evolution
+
+This project has evolved through multiple phases:
+
+1. **📝 Architecture design and documentation**  
+2. **🧠 Business logic and API implementation**  
+3. **🔐 Authentication, authorization, and database integration**  
+4. **🎨 Web interface development**
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository.  
+2. Create a feature branch:
+    ```
+    git checkout -b feature/amazing-feature
+    ```
+3. Commit your changes:
+    ```
+    git commit -m 'Add amazing feature'
+    ```
+4. Push to the branch:
+    ```
+    git push origin feature/amazing-feature 
+    ```
+5. Open a Pull Request.
+
+---
+
+## 📜 License
+
+This project is for educational purposes as part of the Holberton School curriculum.
+
+---
+
+## 🙏 Acknowledgements
+
+Special thanks to:
+
+- 🏫 Holberton School for the project structure and requirements.  
+- 🌐 Flask and SQLAlchemy communities for their excellent documentation.
