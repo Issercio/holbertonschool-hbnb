@@ -1,41 +1,25 @@
-from sqlalchemy.ext.declarative import declared_attr
-from uuid import uuid4
+# app/models/base_model.py
+import uuid
 from datetime import datetime
-from app.extensions import db
+from app import db  # Import de SQLAlchemy pour que BaseModel soit un modèle ORM
+from sqlalchemy import Column, String, DateTime
 
 class BaseModel(db.Model):
-    """Base class for all models"""
-    
-    __abstract__ = True
+    __abstract__ = True  # Indique que cette classe ne doit pas créer de table
 
-    @declared_attr
-    def __tablename__(cls):
-        return cls.__name__.lower()
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    def __init__(self, **kwargs):
-        """Initialize base model with common attributes"""
-        self.id = kwargs.get('id', str(uuid4()))
-        self.created_at = kwargs.get('created_at', datetime.utcnow())
-        self.updated_at = kwargs.get('updated_at', self.created_at)
-        
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-
-    def to_dict(self):
-        """Return dictionary of all instance attributes"""
-        return {
-            'id': self.id,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
-        }
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def save(self):
-        """Update the updated_at attribute with current datetime and save to database"""
+        """Update the updated_at timestamp whenever the object is modified"""
         self.updated_at = datetime.utcnow()
         db.session.add(self)
         db.session.commit()
+
+    def update(self, data):
+        """Update the attributes of the object based on the provided dictionary"""
+        for key, value in data.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        self.save()  # Update the updated_at timestamp

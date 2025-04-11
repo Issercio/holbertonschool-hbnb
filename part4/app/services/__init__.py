@@ -1,4 +1,3 @@
-from .facade import Facade
+from app.services.facade import HBnBFacade
 
-# Instance unique partagée
-facade = Facade()
+facade = HBnBFacade()

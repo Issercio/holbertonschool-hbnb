@@ -1,59 +1,33 @@
-from sqlalchemy import Column, String, UniqueConstraint
-from sqlalchemy.orm import relationship
+# app/models/amenity.py
+
+from app import db
 from .base_model import BaseModel
-from app.extensions import db
-from .association_tables import place_amenity
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
+from .place import place_amenity_association  # ✅ Ajout de l'import
 
-class Amenity(BaseModel):
-    """Class representing an amenity in the system."""
-
+class Amenity(BaseModel, db.Model):
+    """
+    Modèle Amenity en SQLAlchemy, lié à Place par une relation Many-to-Many.
+    """
     __tablename__ = 'amenities'
-    __table_args__ = (
-        UniqueConstraint('name', name='uq_amenity_name'),
-    )
 
+    id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
 
-    # Relation rétablie
-    places = relationship('Place', secondary=place_amenity, back_populates='amenities')
+    # ✅ Relation Many-to-Many avec Place
+    places = relationship('Place', secondary='place_amenity_association', back_populates='amenities', lazy=True)
 
-    def __init__(self, name: str):
-        """
-        Initialize a new amenity.
-        
-        Args:
-            name (str): Name of the amenity
-        """
+    def __init__(self, name):
         super().__init__()
-        self.validate_name(name)
         self.name = name
+        self.validate()
 
-    @staticmethod
-    def validate_name(name: str):
-        """
-        Validate the amenity name.
-        
-        Args:
-            name (str): Name to validate
-        
-        Raises:
-            ValueError: If the name is invalid
-        """
-        if not name or len(name) > 50:
-            raise ValueError("Amenity name must be between 1 and 50 characters")
+    def validate(self):
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise ValueError("Name must be a non-empty string")
+        if len(self.name) > 50:
+            raise ValueError("Name must be 50 characters or less")
 
-    def to_dict(self):
-        """
-        Convert amenity to dictionary representation.
-        
-        Returns:
-            dict: Dictionary representation of the amenity
-        """
-        amenity_dict = super().to_dict()
-        amenity_dict.update({
-            'id': self.id or '',
-            'name': self.name or '',
-            'created_at': self.created_at.isoformat() if self.created_at else '',
-            'updated_at': self.updated_at.isoformat() if self.updated_at else ''
-        })
-        return amenity_dict
+    def __repr__(self):
+        return f"<Amenity name='{self.name}'>"

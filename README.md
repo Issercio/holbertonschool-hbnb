@@ -1,180 +1,183 @@
-# HBNB API Documentation
+🏨 HBNB - Holberton AirBnB Clone
+📋 Project Overview
+HBNB is a comprehensive AirBnB clone application built using Python and Flask. This project implements a RESTful API backend with web frontend that allows users to register, manage properties, leave reviews, and associate amenities with places.
+🏗️ Architecture
+The application follows a three-layered architecture:
 
-## 📁 Project Structure
-```bash
-hbnb/
-├── app/
-│   ├── __init__.py           # App initialization and configuration
-│   ├── api/
-│   │   └── v1/              # API endpoints 
-│   │       ├── amenities.py
-│   │       ├── places.py
-│   │       ├── reviews.py
-│   │       └── users.py
-│   ├── models/              # Data models
-│   │   ├── amenity.py
-│   │   ├── base_model.py
-│   │   ├── place.py
-│   │   ├── review.py
-│   │   └── user.py
-│   ├── persistence/         # Data storage
-│   │   └── repository.py
-│   └── services/           # Business logic
-│       ├── facade.py
-│       └── test.py
-├── config.py               # Configuration settings
-├── run.py                 # Application entry point
-└── requirements.txt       # Project dependencies
-```
+🖥️ Presentation Layer: API endpoints and web interface
+🧠 Business Logic Layer: Core models and business rules
+💾 Persistence Layer: Database interactions and storage
 
-## 🚀 Installation & Setup
+✨ Features
 
-1. Create and activate virtual environment:
-```bash
-python3 -m venv env
-source env/bin/activate
-```
+👤 User registration and authentication with JWT
+🏠 Property (place) listing and management
+⭐ Review system for properties
+🛋️ Amenity management and association with places
+👑 Admin functionality for property management
+📱 Responsive web interface
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+📁 Directory Structure
+.
+├── app/                           # Main application package
+│   ├── __init__.py                # App initialization
+│   ├── extensions.py              # Flask extensions
+│   ├── api/                       # API endpoints
+│   │   ├── v1/                    # API version 1
+│   │   │   ├── amenities.py       # Amenities endpoints
+│   │   │   ├── auth.py            # Authentication endpoints
+│   │   │   ├── places.py          # Places endpoints
+│   │   │   ├── protector.py       # JWT protection middleware
+│   │   │   ├── reviews.py         # Reviews endpoints
+│   │   │   └── users.py           # Users endpoints
+│   ├── models/                    # Data models
+│   │   ├── amenity.py             # Amenity model
+│   │   ├── base_model.py          # Base model with common functionality
+│   │   ├── place.py               # Place model
+│   │   ├── review.py              # Review model
+│   │   └── user.py                # User model
+│   ├── persistence/               # Data storage layer
+│   │   ├── amenity_repository.py  # Amenity storage operations
+│   │   ├── place_repository.py    # Place storage operations
+│   │   ├── repository.py          # Base repository interface
+│   │   ├── review_repository.py   # Review storage operations
+│   │   └── user_repository.py     # User storage operations
+│   └── services/                  # Business logic services
+│       └── facade.py              # Facade pattern implementation
+├── config.py                      # Application configuration
+├── run.py                         # Application entry point
+├── static/                        # Static assets
+│   ├── css/                       # CSS styles
+│   ├── images/                    # Image assets
+│   └── js/                        # JavaScript files
+├── templates/                     # HTML templates
+│   ├── add_review.html            # Review form template
+│   ├── index.html                 # Home page template
+│   ├── login.html                 # Login page template
+│   └── place.html                 # Place details template
+├── tests/                         # Test suite
+│   ├── test_amenity.py            # Amenity tests
+│   ├── test_place.py              # Place tests
+│   ├── test_post_review_with_jwt.py # JWT-protected review tests
+│   ├── test_review.py             # Review tests
+│   └── test_user.py               # User tests
+├── ER_diag.md                     # Entity-relationship diagram
+├── requirements.txt               # Project dependencies
+└── setup.sql                      # Database setup script
+🚀 Installation and Setup
+📋 Prerequisites
 
-3. Run the application:
-```bash
-python3 run.py
-```
+🐍 Python 3.10+
+🔄 Virtual environment (recommended)
+🗄️ SQLite (for development) or MySQL (for production)
 
-The API will be available at `http://127.0.0.1:5000`
+📝 Setup Steps
 
-## ⚙️ Configuration
+Clone the repository
 
-The application supports different environments through `config.py`:
+bashgit clone <repository-url>
+cd hbnb
 
-- Development (default): Debug mode enabled
-- Testing: For running tests
-- Production: For deployment
+Create and activate virtual environment
 
-To change environment:
-```bash
-export FLASK_ENV=development  # or testing/production
-```
+bashpython -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-## 🧪 API Testing Documentation
+Install dependencies
 
-### Manual Test Cases
+bashpip install -r requirements.txt
 
-| Endpoint | Method | Test Data | Expected | Status |
-|----------|--------|-----------|-----------|---------|
-| `/api/v1/users/` | POST | `{"first_name": "John", "last_name": "Doe", "email": "john@example.com"}` | 201 | ✅ |
-| `/api/v1/places/` | POST | `{"title": "Cozy Cabin", "price": 100, "latitude": 40.7128, "longitude": -74.0060}` | 201 | ✅ |
-| `/api/v1/reviews/` | POST | `{"text": "Great!", "rating": 5, "place_id": "uuid", "user_id": "uuid"}` | 201 | ✅ |
-| `/api/v1/amenities/` | POST | `{"name": "WiFi"}` | 201 | ✅ |
+Configure the database
 
-### Running Tests
-```bash
-python3 -m unittest discover tests
-```
+bash# For development (SQLite)
+python setup.sql
 
-### Example Test Cases
+# For production (MySQL)
+# Configure MySQL credentials in config.py and run:
+# mysql -u username -p < setup.sql
 
-#### User Creation Test
-```python
-def test_create_user(self):
-    response = self.client.post('/api/v1/users/', json={
-        "first_name": "Jane",
-        "last_name": "Doe",
-        "email": "jane@example.com"
-    })
-    self.assertEqual(response.status_code, 201)
-```
+Run the application
 
-#### Place Creation Test
-```python
-def test_create_place(self):
-    response = self.client.post('/api/v1/places/', json={
-        "title": "Mountain View",
-        "price": 150.0,
-        "latitude": 37.7749,
-        "longitude": -122.4194
-    })
-    self.assertEqual(response.status_code, 201)
-```
+bashpython run.py
+🌐 API Endpoints
+🔐 Authentication
 
-#### Review Creation Test
-```python
-def test_create_review(self):
-    response = self.client.post('/api/v1/reviews/', json={
-        "text": "Amazing place!",
-        "rating": 5,
-        "place_id": "place-uuid",
-        "user_id": "user-uuid"
-    })
-    self.assertEqual(response.status_code, 201)
-```
+POST /api/v1/auth/login - User login
+POST /api/v1/auth/register - User registration
 
-## 🚀 API Endpoints
+👤 Users
 
-### Users API
-- `POST /api/v1/users/`: Create new user
-- `GET /api/v1/users/`: List all users
-- `GET /api/v1/users/<id>`: Get specific user
-- `PUT /api/v1/users/<id>`: Update user
+GET /api/v1/users - List all users
+GET /api/v1/users/<id> - Get user details
+PUT /api/v1/users/<id> - Update user information
 
-### Places API
-- `POST /api/v1/places/`: Create new place
-- `GET /api/v1/places/`: List all places
-- `GET /api/v1/places/<id>`: Get specific place
-- `PUT /api/v1/places/<id>`: Update place
+🏠 Places
 
-### Reviews API
-- `POST /api/v1/reviews/`: Create new review
-- `GET /api/v1/reviews/`: List all reviews
-- `GET /api/v1/reviews/<id>`: Get specific review
-- `PUT /api/v1/reviews/<id>`: Update review
+GET /api/v1/places - List all places
+GET /api/v1/places/<id> - Get place details
+POST /api/v1/places - Create a new place
+PUT /api/v1/places/<id> - Update place information
 
-### Amenities API
-- `POST /api/v1/amenities/`: Create new amenity
-- `GET /api/v1/amenities/`: List all amenities
-- `GET /api/v1/amenities/<id>`: Get specific amenity
-- `PUT /api/v1/amenities/<id>`: Update amenity
+⭐ Reviews
 
-## 📊 Response Formats
+GET /api/v1/places/<place_id>/reviews - List reviews for a place
+POST /api/v1/places/<place_id>/reviews - Add a review to a place
+PUT /api/v1/reviews/<id> - Update a review
+DELETE /api/v1/reviews/<id> - Delete a review
 
-### Success Response
-```json
-{
-    "id": "uuid",
-    "created_at": "timestamp",
-    "updated_at": "timestamp",
-    ...resource specific fields...
-}
-```
+🛋️ Amenities
 
-### Error Response
-```json
-{
-    "error": "Error message"
-}
-```
+GET /api/v1/amenities - List all amenities
+GET /api/v1/amenities/<id> - Get amenity details
+POST /api/v1/amenities - Create a new amenity
+PUT /api/v1/amenities/<id> - Update amenity information
 
-## 🔑 Model Validation Rules
+🔒 Authentication
+The application uses JWT (JSON Web Tokens) for authentication. Protected endpoints require a valid token in the Authorization header:
+Authorization: Bearer <your-jwt-token>
+To obtain a token, use the login endpoint with valid credentials.
+🧪 Testing
+Run the test suite with pytest:
+bashpytest
+To run specific tests:
+bashpytest tests/test_user.py
+pytest tests/test_place.py
+🗄️ Database Schema
+The application uses SQLAlchemy ORM with the following main entities:
 
-### User Model
-- First name and last name cannot be empty
-- Valid email format required
+👤 User - Stores user information and credentials
+🏠 Place - Represents properties with location and details
+⭐ Review - Contains reviews for places
+🛋️ Amenity - Represents features available at places
 
-### Place Model
-- Title cannot be empty
-- Price must be positive
-- Latitude must be between -90 and 90
-- Longitude must be between -180 and 180
+See ER_diag.md for a detailed entity-relationship diagram.
+🖥️ Web Interface
+The application includes a simple web interface accessible at the root URL:
 
-### Review Model
-- Text cannot be empty
-- Rating must be between 1 and 5
-- Valid user_id and place_id required
+/ - Homepage with places listing
+/login - User login page
+/place/<id> - Place details page
+/add_review/<place_id> - Add review form
 
-### Amenity Model
-- Name cannot be empty
-- Name must be between 1 and 50 characters
+📈 Project Evolution
+This project has evolved through multiple phases:
+
+Part 1 - 📝 Architecture design and documentation
+Part 2 - 🧠 Business logic and API implementation
+Part 3 - 🔐 Authentication, authorization, and database integration
+Part 4 - 🎨 Web interface development
+
+🤝 Contributing
+
+Fork the repository
+Create a feature branch (git checkout -b feature/amazing-feature)
+Commit your changes (git commit -m 'Add amazing feature')
+Push to the branch (git push origin feature/amazing-feature)
+Open a Pull Request
+
+📜 License
+This project is for educational purposes as part of the Holberton School curriculum.
+🙏 Acknowledgements
+
+🏫 Holberton School for the project structure and requirements
+🌐 Flask and SQLAlchemy communities for the excellent documentation

@@ -1,66 +1,61 @@
 from app.models.user import User
-from app.persistence.sqlalchemy_repository import SQLAlchemyRepository
-from app.extensions import db
+from app import db
 from sqlalchemy.exc import IntegrityError
 
-class UserRepository(SQLAlchemyRepository):
-    """Repository for the User model"""
+class UserRepository:
+    """Repository spécifique pour le modèle User."""
 
     def __init__(self):
-        super().__init__(User)
+        self.model = User
+
+    def get_by_id(self, user_id):
+        """Récupère un utilisateur par son ID."""
+        return db.session.query(self.model).get(user_id)
 
     def get_by_email(self, email):
-        """Retrieve a user by their email."""
-        return self.model.query.filter_by(email=email).first()
+        """Récupère un utilisateur par son email."""
+        return db.session.query(self.model).filter_by(email=email).first()
 
-    def create_user(self, user_data):
-        """Create a new user with validation and password hashing."""
+    def create(self, first_name, last_name, email, password, is_admin=False):
+        """Crée un nouvel utilisateur."""
         try:
-            # Vérifier si l'email existe déjà
-            if not User.check_email_uniqueness(user_data['email']):
-                raise ValueError(f"Email {user_data['email']} already exists")
-
-            # Créer l'utilisateur avec le modèle
-            user = User(
-                first_name=user_data.get('first_name', '').strip(),
-                last_name=user_data.get('last_name', '').strip(),
-                email=user_data.get('email', '').strip(),
-                password=user_data['password'],
-                is_admin=user_data.get('is_admin', False)
+            user = self.model(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                password=password,
+                is_admin=is_admin,
             )
-
-            # Utiliser la méthode add() héritée de SQLAlchemyRepository
-            self.add(user)
-            
-            # Retourner un dictionnaire complet de l'utilisateur
-            return user.to_dict()
+            user.hash_password(password)  # Hashage du mot de passe
+            db.session.add(user)
+            db.session.commit()
+            return user
         except IntegrityError:
             db.session.rollback()
-            raise ValueError("Database integrity error - email might be duplicate")
+            raise ValueError("Email déjà utilisé.")
 
-    def get_all(self, page=None, per_page=None):
-        """Get all users with pagination."""
-        query = self.model.query
-        if page and per_page:
-            pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-            return pagination.items, pagination.total
-        else:
-            users = query.all()
-            return users, len(users)
+    def update(self, user_id, data):
+        """Met à jour les informations d'un utilisateur."""
+        user = self.get_by_id(user_id)
+        if not user:
+            raise ValueError("Utilisateur introuvable.")
 
-    def update(self, user_id, user_data):
-        """Update a user."""
-        user = self.get(user_id)
-        if user:
-            if 'email' in user_data and user_data['email'] != user.email:
-                if not User.check_email_uniqueness(user_data['email']):
-                    raise ValueError(f"Email {user_data['email']} already exists")
-            for key, value in user_data.items():
+        for key, value in data.items():
+            if hasattr(user, key) and key != "id":
                 setattr(user, key, value)
-            try:
-                db.session.commit()
-            except IntegrityError:
-                db.session.rollback()
-                raise ValueError("Database integrity error - email might be duplicate")
-            return user
-        return None
+
+        db.session.commit()
+        return user
+
+    def delete(self, user_id):
+        """Supprime un utilisateur par son ID."""
+        user = self.get_by_id(user_id)
+        if not user:
+            raise ValueError("Utilisateur introuvable.")
+
+        db.session.delete(user)
+        db.session.commit()
+
+    def get_all(self):
+        """Retourne la liste de tous les utilisateurs."""
+        return db.session.query(self.model).all()

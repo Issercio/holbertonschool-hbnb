@@ -1,90 +1,76 @@
-from sqlalchemy import Column, String, Float, ForeignKey
-from sqlalchemy.orm import relationship
+from app import db
 from .base_model import BaseModel
-from app.extensions import db
-from .association_tables import place_amenity
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Table
+from sqlalchemy.orm import relationship
+
+# 👇 on définit l'association ici, comme demandé par ton école
+place_amenity_association = Table(
+    'place_amenity_association',
+    db.metadata,
+    Column('place_id', Integer, ForeignKey('places.id'), primary_key=True),
+    Column('amenity_id', Integer, ForeignKey('amenities.id'), primary_key=True)
+)
 
 class Place(BaseModel, db.Model):
-    """Class representing a rental place"""
-    
     __tablename__ = 'places'
 
+    id = Column(Integer, primary_key=True)
     title = Column(String(100), nullable=False)
-    description = Column(String, default="")
+    description = Column(String, nullable=True)
     price = Column(Float, default=0.0)
-    latitude = Column(Float, default=0.0)
-    longitude = Column(Float, default=0.0)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
 
-    # Relations (rétablies)
-    owner_id = Column(String, ForeignKey('users.id'), nullable=False)
-    owner = relationship("User", back_populates="places")
-    amenities = relationship("Amenity", secondary=place_amenity, back_populates="places")
-    reviews = relationship("Review", cascade="all, delete-orphan", back_populates="place")
+    owner_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    owner = relationship('User', back_populates='places', lazy=True)
 
-    def __init__(self, title, description="", price=0.0, latitude=0.0, longitude=0.0, owner_id=None, **kwargs):
-        """Initialize a new Place instance."""
-        super().__init__(**kwargs)
-        self.validate_title(title)
+    reviews = relationship('Review', back_populates='place', lazy=True)
+
+    # Utilisation d'une string dans relationship() pour éviter les imports circulaires
+    amenities = relationship('Amenity', secondary=place_amenity_association, back_populates='places', lazy=True)
+
+    def __init__(self, title, description="", price=0.0, latitude=0.0, longitude=0.0, owner_id=None, owner=None):
+        super().__init__()
         self.title = title
         self.description = description
-        self.price = price  # This will use the setter
-        self.latitude = latitude  # This will use the setter
-        self.longitude = longitude  # This will use the setter
-        self.owner_id = owner_id
+        self.price = price
+        self.latitude = latitude
+        self.longitude = longitude
 
-    @staticmethod
-    def validate_title(title):
-        """Validate that the title is not empty and less than 100 characters."""
-        if not title or len(title) > 100:
-            raise ValueError("Title must be between 1 and 100 characters")
+        # Gestion de owner et owner_id :
+        if owner and owner_id:
+            if int(owner_id) != owner.id:
+                raise ValueError("owner_id does not match owner.id")
+            self.owner = owner
+            self.owner_id = owner.id
+        elif owner:
+            self.owner = owner
+            self.owner_id = owner.id
+        elif owner_id:
+            self.owner_id = int(owner_id)
+        else:
+            raise ValueError("owner or owner_id must be provided")
 
-    @property
-    def price(self):
-        return self._price if hasattr(self, '_price') else 0.0
+        self.reviews = []
+        self.amenities = []
 
-    @price.setter
-    def price(self, value):
-        """Validate that the price is non-negative."""
-        if not isinstance(value, (int, float)) or value < 0:
+        self.validate_attributes()
+
+    def validate_attributes(self):
+        if not isinstance(self.title, str) or not self.title.strip():
+            raise ValueError("Title must be a non-empty string")
+        if not isinstance(self.description, str):
+            raise ValueError("Description must be a string")
+        if not isinstance(self.price, (int, float)) or self.price < 0:
             raise ValueError("Price must be a non-negative number")
-        self._price = float(value)
-
-    @property
-    def latitude(self):
-        return self._latitude if hasattr(self, '_latitude') else 0.0
-
-    @latitude.setter
-    def latitude(self, value):
-        """Validate that the latitude is between -90 and 90."""
-        if not isinstance(value, (int, float)) or not -90 <= float(value) <= 90:
+        if not isinstance(self.latitude, (int, float)) or not (-90 <= self.latitude <= 90):
             raise ValueError("Latitude must be between -90 and 90")
-        self._latitude = float(value)
-
-    @property
-    def longitude(self):
-        return self._longitude if hasattr(self, '_longitude') else 0.0
-
-    @longitude.setter
-    def longitude(self, value):
-        """Validate that the longitude is between -180 and 180."""
-        if not isinstance(value, (int, float)) or not -180 <= float(value) <= 180:
+        if not isinstance(self.longitude, (int, float)) or not (-180 <= self.longitude <= 180):
             raise ValueError("Longitude must be between -180 and 180")
-        self._longitude = float(value)
 
-    def to_dict(self):
-        """Convert place instance to dictionary representation."""
-        place_dict = super().to_dict()
-        place_dict.update({
-            'id': self.id or '',
-            'title': self.title or '',
-            'description': self.description or '',
-            'price': self.price,  # This will use the getter
-            'latitude': self.latitude,  # This will use the getter
-            'longitude': self.longitude,  # This will use the getter
-            'owner_id': self.owner_id or '',
-            'amenities': [amenity.to_dict() for amenity in self.amenities] if self.amenities else [],
-            'owner': self.owner.to_dict() if self.owner else None,
-            'created_at': self.created_at.isoformat() if self.created_at else '',
-            'updated_at': self.updated_at.isoformat() if self.updated_at else ''
-        })
-        return place_dict
+    def add_amenity(self, amenity):
+        if amenity not in self.amenities:
+            self.amenities.append(amenity)
+
+    def __repr__(self):
+        return f"<Place id={self.id} title={self.title}>"

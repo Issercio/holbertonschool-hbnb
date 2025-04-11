@@ -77,3 +77,4 @@ bower_components/
 .nox/
 .hypothesis/
 .web-cache/
+.migrations/
